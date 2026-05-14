@@ -5,6 +5,8 @@ export const runtime = "nodejs";
 type ImportedProduct = {
   title: string;
   brand: string;
+  modelNumber: string;
+  upc: string;
   image: string;
   summary: string;
   bullets: string[];
@@ -159,6 +161,19 @@ function extractProduct(html: string, url: URL): ImportedProduct {
     titleBrandGuess(pageTitle),
     hostLabel(host),
   ]);
+  const modelNumber = pickFirst([
+    asText(jsonProduct?.mpn),
+    asText(jsonProduct?.model),
+    asText(jsonProduct?.sku),
+    getMeta(html, ["product:model", "product:retailer_item_id"]),
+  ]);
+  const upc = pickFirst([
+    asText(jsonProduct?.gtin12),
+    asText(jsonProduct?.gtin13),
+    asText(jsonProduct?.gtin14),
+    asText(jsonProduct?.gtin),
+    getMeta(html, ["product:upc", "product:gtin"]),
+  ]);
   const summary = pickFirst([
     asText(jsonProduct?.description),
     getMeta(html, ["og:description", "twitter:description", "description"]),
@@ -180,6 +195,8 @@ function extractProduct(html: string, url: URL): ImportedProduct {
   return {
     title: pageTitle || "Imported retail product",
     brand,
+    modelNumber,
+    upc,
     image,
     summary: cleanText(summary),
     bullets:

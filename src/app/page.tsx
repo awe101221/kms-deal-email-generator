@@ -24,11 +24,13 @@ import {
   Table2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { ChangeEvent, KeyboardEvent, useMemo, useState } from "react";
+import { ChangeEvent, KeyboardEvent, useState } from "react";
 
 type TemplateMode = "single" | "multi";
+type CatalogColumns = 1 | 2;
 type ProductStatus = "Ready" | "Needs price" | "Needs image" | "Needs terms";
 type ImportState = "idle" | "loading";
+type ProductImageResolver = (product: ProductOffer) => string;
 
 type Campaign = {
   subject: string;
@@ -43,6 +45,8 @@ type ProductOffer = {
   active: boolean;
   title: string;
   brand: string;
+  modelNumber: string;
+  upc: string;
   source: string;
   image: string;
   price: string;
@@ -59,6 +63,8 @@ type ProductOffer = {
 type ImportedProduct = {
   title: string;
   brand: string;
+  modelNumber: string;
+  upc: string;
   image: string;
   summary: string;
   bullets: string[];
@@ -82,6 +88,8 @@ const initialProducts: ProductOffer[] = [
     active: true,
     title: "Cozzia CZ-357 L-Track Massage Chair",
     brand: "Cozzia",
+    modelNumber: "CZ-357",
+    upc: "",
     source: "Amazon / Walmart link",
     image: "/products/cozzia-white.png",
     price: "$499.00",
@@ -104,6 +112,8 @@ const initialProducts: ProductOffer[] = [
     active: true,
     title: "4-Tier Rolling Cart",
     brand: "Simpli-Magic",
+    modelNumber: "",
+    upc: "",
     source: "Walmart link",
     image: "/products/rolling-cart.png",
     price: "$8.60",
@@ -121,6 +131,8 @@ const initialProducts: ProductOffer[] = [
     active: true,
     title: "Electric Spin Scrubber Complete Kit",
     brand: "KMS Home",
+    modelNumber: "",
+    upc: "",
     source: "Amazon link",
     image: "/products/spin-scrubber.png",
     price: "$14.80",
@@ -138,6 +150,8 @@ const initialProducts: ProductOffer[] = [
     active: true,
     title: "Absorbent Stone Quick-Dry Bath Mat",
     brand: "Haven",
+    modelNumber: "",
+    upc: "",
     source: "Walmart link",
     image: "/products/bath-mat.png",
     price: "$4.80",
@@ -155,6 +169,8 @@ const initialProducts: ProductOffer[] = [
     active: true,
     title: "Handheld Steamer with Stainless Nozzle",
     brand: "True & Tidy",
+    modelNumber: "",
+    upc: "",
     source: "Amazon link",
     image: "/products/steamer.png",
     price: "$14.60",
@@ -172,6 +188,8 @@ const initialProducts: ProductOffer[] = [
     active: true,
     title: "Bionic Indoor 3-Head Grow Lamp",
     brand: "Bell + Howell",
+    modelNumber: "",
+    upc: "",
     source: "Walmart link",
     image: "/products/grow-lamp.png",
     price: "$14.30",
@@ -218,6 +236,32 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
+function getProductImage(product: ProductOffer) {
+  return product.image || "/products/product-placeholder.svg";
+}
+
+function getImageUrlInputValue(product: ProductOffer) {
+  return product.image.startsWith("data:") ? "" : product.image;
+}
+
+function getProductIdentifierText(product: ProductOffer) {
+  return [
+    product.modelNumber.trim() ? `Model #: ${product.modelNumber.trim()}` : "",
+    product.upc.trim() ? `UPC: ${product.upc.trim()}` : "",
+  ]
+    .filter(Boolean)
+    .join(" | ");
+}
+
+function buildProductIdentifierHtml(product: ProductOffer) {
+  const identifierText = getProductIdentifierText(product);
+  if (!identifierText) return "";
+
+  return `<div style="font-size:12px;line-height:18px;color:#61768a;margin:0 0 14px;">${escapeHtml(
+    identifierText,
+  )}</div>`;
+}
+
 function getProductStatus(product: ProductOffer): ProductStatus {
   if (!product.image) return "Needs image";
   if (!product.price.trim()) return "Needs price";
@@ -233,7 +277,11 @@ function getProductStatus(product: ProductOffer): ProductStatus {
   return "Ready";
 }
 
-function buildSingleEmailHtml(campaign: Campaign, product: ProductOffer) {
+function buildSingleEmailHtml(
+  campaign: Campaign,
+  product: ProductOffer,
+  resolveImage: ProductImageResolver = getProductImage,
+) {
   const bullets = product.bullets
     .map(
       (bullet) =>
@@ -263,10 +311,11 @@ function buildSingleEmailHtml(campaign: Campaign, product: ProductOffer) {
             <h1 style="margin:8px 0 10px;font-size:30px;line-height:36px;color:#0d2438;">${escapeHtml(
               product.title,
             )}</h1>
+            ${buildProductIdentifierHtml(product)}
             <p style="margin:0 0 20px;font-size:16px;line-height:24px;color:#46627b;">${escapeHtml(
               product.summary,
             )}</p>
-            <img src="${escapeHtml(product.image)}" width="624" alt="${escapeHtml(
+            <img src="${escapeHtml(resolveImage(product))}" width="624" alt="${escapeHtml(
               product.title,
             )}" style="display:block;width:624px;max-width:100%;height:auto;border:1px solid #e3ebf1;">
           </td>
@@ -328,12 +377,21 @@ function buildSingleEmailHtml(campaign: Campaign, product: ProductOffer) {
 </html>`;
 }
 
-function buildMultiEmailHtml(campaign: Campaign, products: ProductOffer[]) {
+function buildMultiEmailHtml(
+  campaign: Campaign,
+  products: ProductOffer[],
+  catalogColumns: CatalogColumns,
+  resolveImage: ProductImageResolver = getProductImage,
+) {
+  const columnWidth = catalogColumns === 1 ? "100%" : "50%";
   const productCells = products
-    .map(
-      (product) => `<td width="50%" style="vertical-align:top;padding:10px;">
+    .map((product) => {
+      const identifierText = getProductIdentifierText(product);
+      const imageWidth = catalogColumns === 1 ? "624" : "284";
+
+      return `<td width="${columnWidth}" style="vertical-align:top;padding:10px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #dfe7ee;background:#ffffff;">
-          <tr><td style="padding:14px;"><img src="${escapeHtml(product.image)}" width="284" alt="${escapeHtml(
+          <tr><td style="padding:14px;"><img src="${escapeHtml(resolveImage(product))}" width="${imageWidth}" alt="${escapeHtml(
             product.title,
           )}" style="display:block;width:100%;height:auto;border:1px solid #edf2f6;"></td></tr>
           <tr><td style="padding:0 14px 14px;">
@@ -343,8 +401,15 @@ function buildMultiEmailHtml(campaign: Campaign, products: ProductOffer[]) {
             <div style="font-size:18px;line-height:22px;font-weight:700;color:#0d2438;margin-top:5px;">${escapeHtml(
               product.title,
             )}</div>
+            ${
+              identifierText
+                ? `<div style="font-size:11px;line-height:16px;color:#61768a;margin-top:5px;">${escapeHtml(
+                    identifierText,
+                  )}</div>`
+                : ""
+            }
             <div style="font-size:13px;line-height:19px;color:#4b657c;margin-top:8px;">${escapeHtml(
-              product.bullets[0] ?? product.summary,
+              product.summary || product.bullets[0] || "",
             )}</div>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;">
               <tr>
@@ -361,14 +426,18 @@ function buildMultiEmailHtml(campaign: Campaign, products: ProductOffer[]) {
             )} | Pallet ${escapeHtml(product.palletQty)}</div>
           </td></tr>
         </table>
-      </td>`,
-    )
+      </td>`;
+    })
     .reduce<string[]>((rows, cell, index) => {
-      if (index % 2 === 0) rows.push(`<tr>${cell}`);
+      if (index % catalogColumns === 0) rows.push(`<tr>${cell}`);
       else rows[rows.length - 1] += `${cell}</tr>`;
       return rows;
     }, [])
-    .map((row) => (row.endsWith("</tr>") ? row : `${row}<td width="50%"></td></tr>`))
+    .map((row) =>
+      row.endsWith("</tr>")
+        ? row
+        : `${row}${catalogColumns === 2 ? `<td width="${columnWidth}"></td>` : ""}</tr>`,
+    )
     .join("");
 
   return `<!doctype html>
@@ -400,6 +469,7 @@ export default function Home() {
   const [campaign, setCampaign] = useState<Campaign>(initialCampaign);
   const [products, setProducts] = useState<ProductOffer[]>(initialProducts);
   const [template, setTemplate] = useState<TemplateMode>("multi");
+  const [catalogColumns, setCatalogColumns] = useState<CatalogColumns>(1);
   const [selectedId, setSelectedId] = useState(initialProducts[0].id);
   const [productUrl, setProductUrl] = useState("");
   const [copied, setCopied] = useState(false);
@@ -410,11 +480,6 @@ export default function Home() {
   const selectedProduct =
     products.find((product) => product.id === selectedId) ?? products[0];
   const singleProduct = selectedProduct ?? activeProducts[0] ?? products[0];
-
-  const exportHtml = useMemo(() => {
-    if (template === "single") return buildSingleEmailHtml(campaign, singleProduct);
-    return buildMultiEmailHtml(campaign, activeProducts);
-  }, [activeProducts, campaign, singleProduct, template]);
 
   function updateCampaign<K extends keyof Campaign>(key: K, value: Campaign[K]) {
     setCampaign((current) => ({ ...current, [key]: value }));
@@ -432,6 +497,104 @@ export default function Home() {
         };
       }),
     );
+  }
+
+  function readBlobAsDataUrl(blob: Blob) {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => resolve(String(reader.result ?? "")));
+      reader.addEventListener("error", () =>
+        reject(new Error("Could not read that image file.")),
+      );
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function getPortableImageSrc(source: string) {
+    const trimmedSource = source.trim();
+    if (!trimmedSource || trimmedSource.startsWith("data:")) return trimmedSource;
+
+    let imageUrl: URL;
+    try {
+      imageUrl = new URL(trimmedSource, window.location.href);
+    } catch {
+      return trimmedSource;
+    }
+
+    if (
+      imageUrl.protocol !== "blob:" &&
+      imageUrl.origin !== window.location.origin
+    ) {
+      return trimmedSource;
+    }
+
+    try {
+      const response = await fetch(imageUrl.toString());
+      if (!response.ok) return trimmedSource;
+
+      return await readBlobAsDataUrl(await response.blob());
+    } catch {
+      return trimmedSource;
+    }
+  }
+
+  async function buildPortableExportHtml() {
+    const productsForExport =
+      template === "single" ? [singleProduct] : activeProducts;
+    const imageCache = new Map<string, string>();
+    const imageByProductId = new Map<string, string>();
+
+    for (const product of productsForExport) {
+      const source = getProductImage(product);
+      const portableSource =
+        imageCache.get(source) ?? (await getPortableImageSrc(source));
+
+      imageCache.set(source, portableSource);
+      imageByProductId.set(product.id, portableSource);
+    }
+
+    const resolvePortableImage: ProductImageResolver = (product) =>
+      imageByProductId.get(product.id) ?? getProductImage(product);
+
+    if (template === "single") {
+      return buildSingleEmailHtml(campaign, singleProduct, resolvePortableImage);
+    }
+
+    return buildMultiEmailHtml(
+      campaign,
+      activeProducts,
+      catalogColumns,
+      resolvePortableImage,
+    );
+  }
+
+  async function replaceProductImage(
+    id: string,
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setImportMessage("Choose an image file to replace the product picture.");
+      input.value = "";
+      return;
+    }
+
+    try {
+      const image = await readBlobAsDataUrl(file);
+      updateProduct(id, { image });
+      setImportMessage("Product picture updated.");
+    } catch (error) {
+      setImportMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not read that image file.",
+      );
+    } finally {
+      input.value = "";
+    }
   }
 
   async function addImportedProduct() {
@@ -463,6 +626,8 @@ export default function Home() {
         active: true,
         title: payload.title || "Imported retail product",
         brand: payload.brand || "Retail source",
+        modelNumber: payload.modelNumber || "",
+        upc: payload.upc || "",
         source: payload.source || trimmedUrl,
         image: payload.image || "/products/product-placeholder.svg",
         price: "",
@@ -507,47 +672,67 @@ export default function Home() {
     }
   }
 
-  function addUploadedProduct(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  async function addUploadedProduct(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
     if (!file) return;
 
-    const image = URL.createObjectURL(file);
-    const nextProduct: ProductOffer = {
-      id: `upload-${Date.now()}`,
-      active: true,
-      title: file.name.replace(/\.[^.]+$/, "").replaceAll("-", " "),
-      brand: "Manual upload",
-      source: "Uploaded product image / spec sheet",
-      image,
-      price: "",
-      units: "",
-      fob: "",
-      palletQty: "",
-      truckloadQty: "",
-      status: "Needs price",
-      tag: "Manual",
-      summary:
-        "Manual upload added. Complete the buyer-facing description and wholesale terms.",
-      bullets: ["Uploaded asset", "Add selling points", "Add wholesale terms"],
-    };
+    if (!file.type.startsWith("image/")) {
+      setImportMessage("Choose an image file for manual product upload.");
+      input.value = "";
+      return;
+    }
 
-    setProducts((current) => [
-      { ...nextProduct, status: getProductStatus(nextProduct) },
-      ...current,
-    ]);
-    setSelectedId(nextProduct.id);
-    setImportMessage("Manual upload added. Complete the offer facts before export.");
-    event.target.value = "";
+    try {
+      const image = await readBlobAsDataUrl(file);
+      const nextProduct: ProductOffer = {
+        id: `upload-${Date.now()}`,
+        active: true,
+        title: file.name.replace(/\.[^.]+$/, "").replaceAll("-", " "),
+        brand: "Manual upload",
+        modelNumber: "",
+        upc: "",
+        source: "Uploaded product image",
+        image,
+        price: "",
+        units: "",
+        fob: "",
+        palletQty: "",
+        truckloadQty: "",
+        status: "Needs price",
+        tag: "Manual",
+        summary:
+          "Manual upload added. Complete the buyer-facing description and wholesale terms.",
+        bullets: ["Uploaded asset", "Add selling points", "Add wholesale terms"],
+      };
+
+      setProducts((current) => [
+        { ...nextProduct, status: getProductStatus(nextProduct) },
+        ...current,
+      ]);
+      setSelectedId(nextProduct.id);
+      setImportMessage("Manual upload added. Complete the offer facts before export.");
+    } catch (error) {
+      setImportMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not read that image file.",
+      );
+    } finally {
+      input.value = "";
+    }
   }
 
   async function copyHtml() {
-    await navigator.clipboard.writeText(exportHtml);
+    await navigator.clipboard.writeText(await buildPortableExportHtml());
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
   }
 
-  function downloadHtml() {
-    const blob = new Blob([exportHtml], { type: "text/html;charset=utf-8" });
+  async function downloadHtml() {
+    const blob = new Blob([await buildPortableExportHtml()], {
+      type: "text/html;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -616,7 +801,7 @@ export default function Home() {
                 </button>
                 <button
                   className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#cbd9e3] bg-white px-4 text-sm font-semibold text-[#24425e] hover:bg-[#f6fafc]"
-                  onClick={copyHtml}
+                  onClick={() => void copyHtml()}
                   type="button"
                 >
                   {copied ? <Check size={16} /> : <Clipboard size={16} />}
@@ -624,7 +809,7 @@ export default function Home() {
                 </button>
                 <button
                   className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#0f75bc] px-4 text-sm font-semibold text-white hover:bg-[#0b609c]"
-                  onClick={downloadHtml}
+                  onClick={() => void downloadHtml()}
                   type="button"
                 >
                   <Download size={16} />
@@ -727,7 +912,7 @@ export default function Home() {
                   </div>
                   <p className="mt-2 text-xs leading-5 text-[#60788e]">
                     Public product pages can be imported when available. If a marketplace blocks
-                    extraction, add images or specs manually.
+                    extraction, add an image manually.
                   </p>
                   {importMessage ? (
                     <p
@@ -744,15 +929,15 @@ export default function Home() {
                 </div>
                 <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-[8px] border border-dashed border-[#b7cad8] bg-[#f8fbfd] px-5 text-center text-sm font-semibold text-[#24425e] hover:border-[#0f75bc]">
                   <ImagePlus size={22} className="mb-2 text-[#0f75bc]" />
-                  Upload image / spec
+                  Upload image
                   <span className="mt-1 text-xs font-normal text-[#60788e]">
-                    Manual fallback
+                    Manual product row
                   </span>
                   <input
                     className="hidden"
                     type="file"
-                    accept="image/*,.pdf"
-                    onChange={addUploadedProduct}
+                    accept="image/*"
+                    onChange={(event) => void addUploadedProduct(event)}
                   />
                 </label>
               </div>
@@ -772,14 +957,23 @@ export default function Home() {
                     onClick={() => {
                       const nextId = `blank-${Date.now()}`;
                       const nextProduct: ProductOffer = {
-                        ...initialProducts[1],
                         id: nextId,
+                        active: true,
                         title: "New product offer",
                         brand: "Brand",
+                        modelNumber: "",
+                        upc: "",
                         source: "Manual entry",
+                        image: "/products/product-placeholder.svg",
                         price: "",
                         units: "",
+                        fob: "",
+                        palletQty: "",
+                        truckloadQty: "",
                         status: "Needs price",
+                        tag: "Manual",
+                        summary: "Add a buyer-facing product description.",
+                        bullets: ["Add buyer highlights"],
                       };
                       setProducts((current) => [
                         { ...nextProduct, status: getProductStatus(nextProduct) },
@@ -794,11 +988,13 @@ export default function Home() {
                   </button>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[980px] border-collapse text-sm">
+                  <table className="w-full min-w-[1460px] border-collapse text-sm">
                     <thead className="bg-[#f7fafc] text-left text-xs uppercase tracking-[0.1em] text-[#60788e]">
                       <tr>
                         <th className="w-12 px-4 py-3">Use</th>
                         <th className="px-3 py-3">Product</th>
+                        <th className="px-3 py-3">Model #</th>
+                        <th className="px-3 py-3">UPC</th>
                         <th className="px-3 py-3">Price</th>
                         <th className="px-3 py-3">Units</th>
                         <th className="px-3 py-3">FOB</th>
@@ -830,15 +1026,34 @@ export default function Home() {
                             />
                           </td>
                           <td className="px-3 py-3">
-                            <div className="flex items-center gap-3">
-                              <img
-                                alt=""
-                                className="h-12 w-14 rounded-[6px] border border-[#dfe7ee] bg-white object-contain"
-                                src={product.image}
-                              />
-                              <div className="min-w-0">
+                            <div className="flex items-start gap-3">
+                              <label
+                                className="group relative grid h-24 w-24 shrink-0 cursor-pointer place-items-center overflow-hidden rounded-[6px] border border-[#dfe7ee] bg-white"
+                                onClick={(event) => event.stopPropagation()}
+                                title="Change product picture"
+                              >
+                                <img
+                                  alt=""
+                                  className="h-full w-full object-contain"
+                                  src={getProductImage(product)}
+                                />
+                                <span className="absolute inset-x-0 bottom-0 inline-flex items-center justify-center gap-1 bg-[#08263d]/85 px-2 py-1 text-[10px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+                                  <ImagePlus size={12} />
+                                  Change
+                                </span>
                                 <input
-                                  className="h-8 w-72 rounded-[6px] border border-transparent bg-transparent px-2 font-semibold text-[#102536] outline-none hover:border-[#cbd9e3] focus:border-[#0f75bc] focus:bg-white"
+                                  className="hidden"
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(event) =>
+                                    void replaceProductImage(product.id, event)
+                                  }
+                                  onClick={(event) => event.stopPropagation()}
+                                />
+                              </label>
+                              <div className="min-w-0 flex-1 space-y-2">
+                                <input
+                                  className="h-8 w-full rounded-[6px] border border-transparent bg-transparent px-2 font-semibold text-[#102536] outline-none hover:border-[#cbd9e3] focus:border-[#0f75bc] focus:bg-white"
                                   value={product.title}
                                   onChange={(event) =>
                                     updateProduct(product.id, {
@@ -847,26 +1062,78 @@ export default function Home() {
                                   }
                                   onClick={(event) => event.stopPropagation()}
                                 />
-                                <div className="px-2 text-xs text-[#60788e]">
-                                  {product.brand} · {product.source}
+                                <div className="grid gap-2 sm:grid-cols-[minmax(0,170px)_1fr]">
+                                  <input
+                                    aria-label={`${product.title} brand`}
+                                    className="h-8 rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-xs font-semibold text-[#24425e] outline-none focus:border-[#0f75bc]"
+                                    placeholder="Brand"
+                                    value={product.brand}
+                                    onChange={(event) =>
+                                      updateProduct(product.id, {
+                                        brand: event.target.value,
+                                      })
+                                    }
+                                    onClick={(event) => event.stopPropagation()}
+                                  />
+                                  <div className="truncate px-2 py-2 text-xs text-[#60788e]">
+                                    {product.source}
+                                  </div>
                                 </div>
+                                <input
+                                  aria-label={`${product.title} image URL`}
+                                  className="h-8 w-full rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-xs text-[#24425e] outline-none focus:border-[#0f75bc]"
+                                  placeholder={
+                                    product.image.startsWith("data:")
+                                      ? "Uploaded image in use; paste image URL to replace"
+                                      : "Image URL"
+                                  }
+                                  value={getImageUrlInputValue(product)}
+                                  onChange={(event) =>
+                                    updateProduct(product.id, {
+                                      image: event.target.value.trim(),
+                                    })
+                                  }
+                                  onClick={(event) => event.stopPropagation()}
+                                />
+                                <textarea
+                                  aria-label={`${product.title} product description`}
+                                  className="min-h-14 w-full resize-none rounded-[6px] border border-[#d9e4ec] bg-white px-2 py-2 text-xs leading-5 text-[#24425e] outline-none focus:border-[#0f75bc]"
+                                  placeholder="Product description"
+                                  value={product.summary}
+                                  onChange={(event) =>
+                                    updateProduct(product.id, {
+                                      summary: event.target.value,
+                                    })
+                                  }
+                                  onClick={(event) => event.stopPropagation()}
+                                />
                               </div>
                             </div>
                           </td>
+                          {(["modelNumber", "upc"] as const).map((field) => (
+                            <td key={field} className="px-3 py-3 align-top">
+                              <input
+                                className="h-9 w-32 rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-sm outline-none focus:border-[#0f75bc]"
+                                placeholder={field === "modelNumber" ? "Model #" : "UPC"}
+                                value={product[field]}
+                                onChange={(event) =>
+                                  updateProduct(product.id, {
+                                    [field]: event.target.value,
+                                  })
+                                }
+                                onClick={(event) => event.stopPropagation()}
+                              />
+                            </td>
+                          ))}
                           {(["price", "units", "fob", "palletQty", "truckloadQty"] as const).map(
                             (field) => (
-                              <td key={field} className="px-3 py-3">
+                              <td key={field} className="px-3 py-3 align-top">
                                 <input
                                   className="h-9 w-28 rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-sm outline-none focus:border-[#0f75bc]"
                                   value={product[field]}
                                   onChange={(event) =>
                                     updateProduct(product.id, {
                                       [field]: event.target.value,
-                                      status: event.target.value
-                                        ? "Ready"
-                                        : field === "price"
-                                          ? "Needs price"
-                                          : product.status,
                                     })
                                   }
                                   onClick={(event) => event.stopPropagation()}
@@ -874,7 +1141,7 @@ export default function Home() {
                               </td>
                             ),
                           )}
-                          <td className="px-3 py-3">
+                          <td className="px-3 py-3 align-top">
                             <span
                               className={`inline-flex rounded-[999px] px-2.5 py-1 text-xs font-semibold ${
                                 product.status === "Ready"
@@ -941,6 +1208,31 @@ export default function Home() {
                     );
                   })}
                 </div>
+                {template === "multi" ? (
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[#d9e4ec] bg-[#f8fbfd] p-3">
+                    <div>
+                      <div className="text-sm font-semibold text-[#0d2438]">
+                        Catalog row layout
+                      </div>
+                    </div>
+                    <div className="inline-flex rounded-[8px] border border-[#cbd9e3] bg-white p-1">
+                      {([1, 2] as const).map((columns) => (
+                        <button
+                          key={columns}
+                          className={`h-8 rounded-[6px] px-3 text-xs font-semibold transition ${
+                            catalogColumns === columns
+                              ? "bg-[#0f75bc] text-white"
+                              : "text-[#24425e] hover:bg-[#eef6fb]"
+                          }`}
+                          onClick={() => setCatalogColumns(columns)}
+                          type="button"
+                        >
+                          {columns} per row
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </section>
 
@@ -966,7 +1258,11 @@ export default function Home() {
                   {template === "single" ? (
                     <SingleEmailPreview campaign={campaign} product={singleProduct} />
                   ) : (
-                    <MultiEmailPreview campaign={campaign} products={activeProducts} />
+                    <MultiEmailPreview
+                      campaign={campaign}
+                      catalogColumns={catalogColumns}
+                      products={activeProducts}
+                    />
                   )}
                 </div>
               </div>
@@ -1000,11 +1296,16 @@ function SingleEmailPreview({
         <h2 className="mt-2 text-2xl font-semibold leading-8 text-[#0d2438]">
           {product.title}
         </h2>
+        {getProductIdentifierText(product) ? (
+          <div className="mt-1 text-xs font-semibold text-[#60788e]">
+            {getProductIdentifierText(product)}
+          </div>
+        ) : null}
         <p className="mt-3 text-sm leading-6 text-[#49677f]">{product.summary}</p>
         <img
           alt=""
           className="mt-4 h-52 w-full border border-[#e3ebf1] object-contain"
-          src={product.image}
+          src={getProductImage(product)}
         />
         <div className="mt-4 grid grid-cols-3 gap-1">
           <FactBlock label="Price" value={product.price || "Add"} tone="blue" />
@@ -1024,6 +1325,8 @@ function SingleEmailPreview({
           </div>
           <div className="border border-[#e1e9ef] bg-[#f8fafc] p-3 text-xs leading-5 text-[#24425e]">
             <div className="mb-1 font-semibold text-[#0d2438]">Deal terms</div>
+            {product.modelNumber ? <div>Model: {product.modelNumber}</div> : null}
+            {product.upc ? <div>UPC: {product.upc}</div> : null}
             <div>Pallet: {product.palletQty || "Add"}</div>
             <div>Truckload: {product.truckloadQty || "Add"}</div>
             <div>Timing: {campaign.responseBy}</div>
@@ -1043,9 +1346,11 @@ function SingleEmailPreview({
 
 function MultiEmailPreview({
   campaign,
+  catalogColumns,
   products,
 }: {
   campaign: Campaign;
+  catalogColumns: CatalogColumns;
   products: ProductOffer[];
 }) {
   return (
@@ -1059,7 +1364,11 @@ function MultiEmailPreview({
       <div className="px-5 py-4 text-sm leading-6 text-[#49677f]">
         {campaign.intro}
       </div>
-      <div className="grid grid-cols-2 gap-3 px-4 pb-5">
+      <div
+        className={`grid gap-3 px-4 pb-5 ${
+          catalogColumns === 1 ? "grid-cols-1" : "grid-cols-2"
+        }`}
+      >
         {products.map((product) => (
           <article
             key={product.id}
@@ -1067,8 +1376,10 @@ function MultiEmailPreview({
           >
             <img
               alt=""
-              className="h-28 w-full border border-[#edf2f6] object-contain"
-              src={product.image}
+              className={`w-full border border-[#edf2f6] object-contain ${
+                catalogColumns === 1 ? "h-40" : "h-28"
+              }`}
+              src={getProductImage(product)}
             />
             <div className="mt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#0f75bc]">
               {product.brand}
@@ -1076,8 +1387,13 @@ function MultiEmailPreview({
             <h3 className="mt-1 min-h-10 text-sm font-semibold leading-5 text-[#0d2438]">
               {product.title}
             </h3>
+            {getProductIdentifierText(product) ? (
+              <div className="mt-1 text-[10px] leading-4 text-[#60788e]">
+                {getProductIdentifierText(product)}
+              </div>
+            ) : null}
             <p className="mt-1 line-clamp-2 text-xs leading-4 text-[#60788e]">
-              {product.bullets[0] ?? product.summary}
+              {product.summary || product.bullets[0]}
             </p>
             <div className="mt-2 flex items-end justify-between gap-2">
               <div className="text-base font-bold text-[#0f6faa]">
