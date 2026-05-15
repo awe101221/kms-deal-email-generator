@@ -2,6 +2,7 @@
 "use client";
 
 import {
+  Box,
   Check,
   ChevronRight,
   Clipboard,
@@ -13,7 +14,6 @@ import {
   Inbox,
   LayoutDashboard,
   Link2,
-  Mail,
   MousePointer2,
   PackageCheck,
   Plus,
@@ -22,9 +22,10 @@ import {
   Settings,
   Sparkles,
   Table2,
+  Truck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { ChangeEvent, KeyboardEvent, useState } from "react";
+import { ChangeEvent, KeyboardEvent, useEffect, useState } from "react";
 
 type TemplateMode = "single" | "multi";
 type CatalogColumns = 1 | 2;
@@ -52,12 +53,18 @@ type ProductOffer = {
   price: string;
   units: string;
   fob: string;
+  casePack: string;
   palletQty: string;
   truckloadQty: string;
   status: ProductStatus;
   tag: string;
   summary: string;
   bullets: string[];
+};
+
+type ProductDetailItem = {
+  label: string;
+  body: string;
 };
 
 type ImportedProduct = {
@@ -95,6 +102,7 @@ const initialProducts: ProductOffer[] = [
     price: "$499.00",
     units: "83",
     fob: "CA / NC",
+    casePack: "1",
     palletQty: "6 chairs",
     truckloadQty: "Take all by location",
     status: "Ready",
@@ -119,6 +127,7 @@ const initialProducts: ProductOffer[] = [
     price: "$8.60",
     units: "1,626",
     fob: "IL",
+    casePack: "12",
     palletQty: "72 units",
     truckloadQty: "1,728 units",
     status: "Ready",
@@ -138,6 +147,7 @@ const initialProducts: ProductOffer[] = [
     price: "$14.80",
     units: "1,131",
     fob: "IL",
+    casePack: "24",
     palletQty: "48 units",
     truckloadQty: "1,152 units",
     status: "Ready",
@@ -157,6 +167,7 @@ const initialProducts: ProductOffer[] = [
     price: "$4.80",
     units: "5,930",
     fob: "TX",
+    casePack: "20",
     palletQty: "160 units",
     truckloadQty: "4,800 units",
     status: "Ready",
@@ -176,6 +187,7 @@ const initialProducts: ProductOffer[] = [
     price: "$14.60",
     units: "1,026",
     fob: "CA",
+    casePack: "12",
     palletQty: "60 units",
     truckloadQty: "1,440 units",
     status: "Ready",
@@ -195,6 +207,7 @@ const initialProducts: ProductOffer[] = [
     price: "$14.30",
     units: "664",
     fob: "IL",
+    casePack: "12",
     palletQty: "54 units",
     truckloadQty: "1,296 units",
     status: "Ready",
@@ -215,14 +228,14 @@ const navItems: { label: string; icon: LucideIcon }[] = [
 const templateCards = [
   {
     id: "single" as TemplateMode,
-    label: "Single showcase",
-    description: "Option 4 style for one hero product with premium facts and buyer CTA.",
+    label: "Featured offer",
+    description: "Design 2 premium product email with hero image and spec-sheet rows.",
     icon: MousePointer2,
   },
   {
     id: "multi" as TemplateMode,
     label: "Catalog grid",
-    description: "Option 2 style for a clean multi-product closeout email.",
+    description: "Multi-product grid using the same masthead, rules, and wholesale metrics.",
     icon: Grid3X3,
   },
 ];
@@ -257,9 +270,71 @@ function buildProductIdentifierHtml(product: ProductOffer) {
   const identifierText = getProductIdentifierText(product);
   if (!identifierText) return "";
 
-  return `<div style="font-size:12px;line-height:18px;color:#61768a;margin:0 0 14px;">${escapeHtml(
+  return `<div style="font-size:16px;line-height:24px;color:#6c7a8c;margin:0;">${escapeHtml(
     identifierText,
   )}</div>`;
+}
+
+function getDisplayValue(value: string, fallback = "Add") {
+  const trimmedValue = value.trim();
+  return trimmedValue || fallback;
+}
+
+function getDetailLabelFromText(text: string) {
+  const words = text
+    .replace(/[^a-z0-9\s&+-]/gi, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return words.slice(0, 3).join(" ") || "Product detail";
+}
+
+function getProductDetailItems(product: ProductOffer): ProductDetailItem[] {
+  const detailItems: ProductDetailItem[] = [];
+
+  if (product.summary.trim()) {
+    detailItems.push({
+      label: "Product overview",
+      body: product.summary.trim(),
+    });
+  }
+
+  product.bullets.forEach((bullet) => {
+    const trimmedBullet = bullet.trim();
+    if (!trimmedBullet) return;
+
+    const dividerIndex = trimmedBullet.indexOf(":");
+    if (dividerIndex > 0) {
+      detailItems.push({
+        label: trimmedBullet.slice(0, dividerIndex),
+        body: trimmedBullet.slice(dividerIndex + 1).trim(),
+      });
+      return;
+    }
+
+    detailItems.push({
+      label: getDetailLabelFromText(trimmedBullet),
+      body: trimmedBullet,
+    });
+  });
+
+  return detailItems.length > 0
+    ? detailItems
+    : [{ label: "Product detail", body: "Add product detail before export." }];
+}
+
+function buildProductDetailRowsHtml(product: ProductOffer) {
+  return getProductDetailItems(product)
+    .map((detail, index) => {
+      const dividerStyle =
+        index === 0 ? "" : "border-top:1px solid #d6dde6;";
+
+      return `<tr><td style="${dividerStyle}padding:${index === 0 ? "0 0 20px" : "20px 0"};font-size:17px;line-height:27px;color:#1e3147;"><span style="font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#0b5ab8;">${escapeHtml(
+        detail.label,
+      )}:</span> ${escapeHtml(detail.body)}</td></tr>`;
+    })
+    .join("");
 }
 
 function getProductStatus(product: ProductOffer): ProductStatus {
@@ -268,6 +343,7 @@ function getProductStatus(product: ProductOffer): ProductStatus {
   if (
     !product.units.trim() ||
     !product.fob.trim() ||
+    !product.casePack.trim() ||
     !product.palletQty.trim() ||
     !product.truckloadQty.trim()
   ) {
@@ -282,102 +358,94 @@ function buildSingleEmailHtml(
   product: ProductOffer,
   resolveImage: ProductImageResolver = getProductImage,
 ) {
-  const bullets = product.bullets
-    .map(
-      (bullet) =>
-        `<li style="margin:0 0 8px;color:#24425e;font-size:15px;line-height:22px;">${escapeHtml(
-          bullet,
-        )}</li>`,
-    )
-    .join("");
+  const preheader = `${campaign.subject} | ${product.title}`;
+  const detailRows = buildProductDetailRowsHtml(product);
 
   return `<!doctype html>
 <html>
-<body style="margin:0;background:#f3f6f8;font-family:Arial,Helvetica,sans-serif;color:#15283a;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f6f8;padding:28px 0;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>${escapeHtml(product.title)}</title>
+</head>
+<body style="margin:0;background:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#132235;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(
+    preheader,
+  )}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f5f7fa;margin:0;padding:24px 12px;">
     <tr><td align="center">
-      <table role="presentation" width="680" cellpadding="0" cellspacing="0" style="width:680px;max-width:680px;background:#ffffff;border:1px solid #dfe7ee;">
+      <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" style="width:640px;max-width:100%;background:#ffffff;border-collapse:collapse;color:#132235;">
         <tr>
-          <td style="background:#08263d;color:#ffffff;padding:22px 28px;">
-            <div style="font-size:20px;font-weight:700;letter-spacing:.02em;">KMS Wholesale</div>
-            <div style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#9fd4ff;margin-top:6px;">Featured wholesale offer</div>
+          <td style="padding:32px 44px 22px;border-bottom:1px solid #d6dde6;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="left" style="font-size:26px;line-height:31px;font-weight:700;color:#132235;">KMS Wholesale</td>
+                <td align="right" style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#6c7a8c;">FEATURED WHOLESALE OFFER</td>
+              </tr>
+            </table>
           </td>
         </tr>
         <tr>
-          <td style="padding:30px 28px 18px;">
-            <div style="font-size:12px;color:#1b75bb;font-weight:700;text-transform:uppercase;">${escapeHtml(
-              product.tag,
+          <td align="center" style="padding:36px 44px 40px;">
+            <img src="${escapeHtml(resolveImage(product))}" width="300" alt="${escapeHtml(
+              product.title,
+            )}" style="display:block;width:300px;max-width:80%;height:auto;border:0;outline:none;text-decoration:none;">
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 44px 28px;">
+            <div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#0b5ab8;margin:0 0 18px;">${escapeHtml(
+              product.tag || "Imported",
             )}</div>
-            <h1 style="margin:8px 0 10px;font-size:30px;line-height:36px;color:#0d2438;">${escapeHtml(
+            <h1 style="margin:0 0 22px;font-size:38px;line-height:46px;font-weight:700;color:#132235;">${escapeHtml(
               product.title,
             )}</h1>
             ${buildProductIdentifierHtml(product)}
-            <p style="margin:0 0 20px;font-size:16px;line-height:24px;color:#46627b;">${escapeHtml(
-              product.summary,
-            )}</p>
-            <img src="${escapeHtml(resolveImage(product))}" width="624" alt="${escapeHtml(
-              product.title,
-            )}" style="display:block;width:624px;max-width:100%;height:auto;border:1px solid #e3ebf1;">
           </td>
         </tr>
         <tr>
-          <td style="padding:0 28px 24px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+          <td style="padding:0 44px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #d6dde6;border-bottom:1px solid #d6dde6;">
               <tr>
-                <td style="background:#eef6fb;padding:16px;border-right:4px solid #ffffff;"><div style="font-size:12px;color:#57718a;">Wholesale price</div><div style="font-size:24px;font-weight:700;color:#0f6faa;">${escapeHtml(
-                  product.price,
+                <td width="33.33%" style="padding:26px 16px 26px 0;border-right:1px solid #d6dde6;"><div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6c7a8c;">Case Pack</div><div style="margin-top:8px;font-size:25px;line-height:30px;font-weight:700;color:#132235;">${escapeHtml(
+                  getDisplayValue(product.casePack),
                 )}</div></td>
-                <td style="background:#eef6fb;padding:16px;border-right:4px solid #ffffff;"><div style="font-size:12px;color:#57718a;">Available units</div><div style="font-size:24px;font-weight:700;color:#14833b;">${escapeHtml(
-                  product.units,
+                <td width="33.33%" style="padding:26px 16px;border-right:1px solid #d6dde6;"><div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6c7a8c;">Units Per Pallet</div><div style="margin-top:8px;font-size:25px;line-height:30px;font-weight:700;color:#132235;">${escapeHtml(
+                  getDisplayValue(product.palletQty),
                 )}</div></td>
-                <td style="background:#eef6fb;padding:16px;"><div style="font-size:12px;color:#57718a;">FOB</div><div style="font-size:24px;font-weight:700;color:#0d2438;">${escapeHtml(
-                  product.fob,
+                <td width="33.33%" style="padding:26px 0 26px 16px;"><div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6c7a8c;">Units Per Truck</div><div style="margin-top:8px;font-size:25px;line-height:30px;font-weight:700;color:#132235;">${escapeHtml(
+                  getDisplayValue(product.truckloadQty),
                 )}</div></td>
               </tr>
             </table>
           </td>
         </tr>
         <tr>
-          <td style="padding:0 28px 26px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <td style="padding:0 44px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-bottom:1px solid #d6dde6;">
               <tr>
-                <td style="vertical-align:top;">
-                  <div style="font-size:16px;font-weight:700;color:#0d2438;margin-bottom:10px;">Product Detail</div>
-                  <ul style="padding-left:20px;margin:0;">${bullets}</ul>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding-top:18px;">
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e1e9ef;">
-                    <tr>
-                      <td style="padding:16px;">
-                        <div style="font-size:16px;font-weight:700;color:#0d2438;margin-bottom:12px;">Deal terms</div>
-                        <div style="font-size:14px;line-height:23px;color:#24425e;">Pallet qty: <strong>${escapeHtml(
-                          product.palletQty,
-                        )}</strong><br>Truckload qty: <strong>${escapeHtml(
-                          product.truckloadQty,
-                        )}</strong><br>Timing: <strong>${escapeHtml(
-                          campaign.responseBy,
-                        )}</strong></div>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
+                <td width="33.33%" style="padding:28px 16px 28px 0;border-right:1px solid #d6dde6;"><div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6c7a8c;">Price</div><div style="margin-top:10px;font-size:29px;line-height:34px;font-weight:700;color:#0b5ab8;">${escapeHtml(
+                  getDisplayValue(product.price),
+                )}</div></td>
+                <td width="33.33%" style="padding:28px 16px;border-right:1px solid #d6dde6;"><div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6c7a8c;">Units</div><div style="margin-top:10px;font-size:29px;line-height:34px;font-weight:700;color:#0b5ab8;">${escapeHtml(
+                  getDisplayValue(product.units),
+                )}</div></td>
+                <td width="33.33%" style="padding:28px 0 28px 16px;"><div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6c7a8c;">FOB</div><div style="margin-top:10px;font-size:29px;line-height:34px;font-weight:700;color:#0b5ab8;">${escapeHtml(
+                  getDisplayValue(product.fob),
+                )}</div></td>
               </tr>
             </table>
           </td>
         </tr>
         <tr>
-          <td style="padding:0 28px 32px;">
-            <a href="mailto:sales@kmswholesale.com?subject=${encodeURIComponent(
-              `Interested in ${product.title}`,
-            )}" style="display:inline-block;background:#e32525;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:14px 22px;">Reply interested</a>
-            <span style="font-size:13px;color:#61768a;margin-left:12px;">Reply with target quantities or location preference.</span>
+          <td style="padding:40px 44px 30px;">
+            <div style="font-size:14px;line-height:18px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#132235;">Product Detail</div>
+            <div style="width:40px;height:2px;background:#0b5ab8;margin:16px 0 26px;"></div>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+              ${detailRows}
+            </table>
           </td>
         </tr>
-        <tr><td style="background:#08263d;color:#c9d8e5;padding:20px 28px;font-size:13px;">KMS Wholesale | Buyer-ready wholesale opportunities | ${escapeHtml(
-          campaign.exportTarget,
-        )}</td></tr>
       </table>
     </td></tr>
   </table>
@@ -395,43 +463,50 @@ function buildMultiEmailHtml(
   const productCells = products
     .map((product) => {
       const identifierText = getProductIdentifierText(product);
-      const imageWidth = catalogColumns === 1 ? "624" : "284";
+      const imageWidth = catalogColumns === 1 ? "220" : "150";
 
       return `<td width="${columnWidth}" style="vertical-align:top;padding:10px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #dfe7ee;background:#ffffff;">
-          <tr><td style="padding:14px;"><img src="${escapeHtml(resolveImage(product))}" width="${imageWidth}" alt="${escapeHtml(
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #d6dde6;background:#ffffff;border-collapse:collapse;">
+          <tr><td align="center" style="padding:24px 20px 18px;"><img src="${escapeHtml(resolveImage(product))}" width="${imageWidth}" alt="${escapeHtml(
             product.title,
-          )}" style="display:block;width:100%;height:auto;border:1px solid #edf2f6;"></td></tr>
-          <tr><td style="padding:0 14px 14px;">
-            <div style="font-size:11px;color:#1b75bb;font-weight:700;text-transform:uppercase;">${escapeHtml(
-              product.brand,
+          )}" style="display:block;width:${imageWidth}px;max-width:82%;height:auto;border:0;outline:none;text-decoration:none;"></td></tr>
+          <tr><td style="padding:0 20px 20px;">
+            <div style="font-size:11px;line-height:15px;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;color:#0b5ab8;">${escapeHtml(
+              product.tag || product.brand,
             )}</div>
-            <div style="font-size:18px;line-height:22px;font-weight:700;color:#0d2438;margin-top:5px;">${escapeHtml(
+            <div style="font-size:${catalogColumns === 1 ? "24px" : "18px"};line-height:${catalogColumns === 1 ? "31px" : "23px"};font-weight:700;color:#132235;margin-top:10px;">${escapeHtml(
               product.title,
             )}</div>
             ${
               identifierText
-                ? `<div style="font-size:11px;line-height:16px;color:#61768a;margin-top:5px;">${escapeHtml(
+                ? `<div style="font-size:12px;line-height:18px;color:#6c7a8c;margin-top:8px;">${escapeHtml(
                     identifierText,
                   )}</div>`
                 : ""
             }
-            <div style="font-size:13px;line-height:19px;color:#4b657c;margin-top:8px;">${escapeHtml(
+            <div style="font-size:14px;line-height:22px;color:#1e3147;margin-top:12px;">${escapeHtml(
               product.summary || product.bullets[0] || "",
             )}</div>
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #d6dde6;border-bottom:1px solid #d6dde6;margin-top:18px;">
               <tr>
-                <td style="font-size:22px;font-weight:700;color:#0f6faa;">${escapeHtml(
-                  product.price,
-                )}</td>
-                <td align="right" style="font-size:13px;color:#14833b;font-weight:700;">In stock: ${escapeHtml(
-                  product.units,
-                )}</td>
+                <td width="33.33%" style="padding:16px 10px 16px 0;border-right:1px solid #d6dde6;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6c7a8c;">Price</div><div style="margin-top:6px;font-size:22px;line-height:26px;font-weight:700;color:#0b5ab8;">${escapeHtml(
+                  getDisplayValue(product.price),
+                )}</div></td>
+                <td width="33.33%" style="padding:16px 10px;border-right:1px solid #d6dde6;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6c7a8c;">Units</div><div style="margin-top:6px;font-size:22px;line-height:26px;font-weight:700;color:#0b5ab8;">${escapeHtml(
+                  getDisplayValue(product.units),
+                )}</div></td>
+                <td width="33.33%" style="padding:16px 0 16px 10px;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6c7a8c;">FOB</div><div style="margin-top:6px;font-size:22px;line-height:26px;font-weight:700;color:#0b5ab8;">${escapeHtml(
+                  getDisplayValue(product.fob),
+                )}</div></td>
               </tr>
             </table>
-            <div style="font-size:12px;color:#61768a;margin-top:8px;">FOB ${escapeHtml(
-              product.fob,
-            )} | Pallet ${escapeHtml(product.palletQty)}</div>
+            <div style="font-size:11px;line-height:18px;color:#6c7a8c;margin-top:12px;text-transform:uppercase;letter-spacing:1px;">Case pack ${escapeHtml(
+              getDisplayValue(product.casePack),
+            )} &nbsp; | &nbsp; Pallet ${escapeHtml(
+              getDisplayValue(product.palletQty),
+            )} &nbsp; | &nbsp; Truck ${escapeHtml(
+              getDisplayValue(product.truckloadQty),
+            )}</div>
           </td></tr>
         </table>
       </td>`;
@@ -450,22 +525,36 @@ function buildMultiEmailHtml(
 
   return `<!doctype html>
 <html>
-<body style="margin:0;background:#f3f6f8;font-family:Arial,Helvetica,sans-serif;color:#15283a;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f6f8;padding:28px 0;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>${escapeHtml(campaign.subject)}</title>
+</head>
+<body style="margin:0;background:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#132235;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f5f7fa;margin:0;padding:24px 12px;">
     <tr><td align="center">
-      <table role="presentation" width="700" cellpadding="0" cellspacing="0" style="width:700px;max-width:700px;background:#ffffff;border:1px solid #dfe7ee;">
-        <tr><td style="background:#08263d;color:#ffffff;padding:24px 28px;">
-          <div style="font-size:20px;font-weight:700;">KMS Wholesale</div>
-          <h1 style="margin:8px 0 0;font-size:30px;line-height:36px;">Houseware Closeout Deals</h1>
-        </td></tr>
-        <tr><td style="padding:22px 28px 6px;font-size:16px;line-height:24px;color:#46627b;">${escapeHtml(
+      <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" style="width:640px;max-width:100%;background:#ffffff;border-collapse:collapse;color:#132235;">
+        <tr>
+          <td style="padding:32px 44px 22px;border-bottom:1px solid #d6dde6;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="left" style="font-size:26px;line-height:31px;font-weight:700;color:#132235;">KMS Wholesale</td>
+                <td align="right" style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#6c7a8c;">WHOLESALE CATALOG</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr><td style="padding:34px 44px 10px;">
+          <div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#0b5ab8;margin:0 0 16px;">Featured offers</div>
+          <h1 style="margin:0 0 16px;font-size:38px;line-height:46px;font-weight:700;color:#132235;">Houseware Closeout Deals</h1>
+          <div style="font-size:16px;line-height:26px;color:#1e3147;">${escapeHtml(
           campaign.intro,
-        )}</td></tr>
-        <tr><td style="padding:10px 18px 24px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${productCells}</table></td></tr>
-        <tr><td style="background:#eef6fb;padding:22px 28px;color:#24425e;font-size:15px;line-height:22px;"><strong>Next step:</strong> Reply with item names and target quantities. KMS will confirm current availability, FOB details, and booking timing.</td></tr>
-        <tr><td style="background:#08263d;color:#c9d8e5;padding:20px 28px;font-size:13px;">KMS Wholesale | ${escapeHtml(
-          campaign.exportTarget,
-        )}</td></tr>
+        )}</div>
+        </td></tr>
+        <tr><td style="padding:10px 34px 24px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">${productCells}</table></td></tr>
+        <tr><td style="border-top:1px solid #d6dde6;padding:26px 44px 34px;color:#1e3147;font-size:15px;line-height:24px;"><strong style="color:#132235;">Next step:</strong> Reply with item names and target quantities. KMS will confirm availability, FOB details, and booking timing for ${escapeHtml(
+          campaign.responseBy,
+        )}.</td></tr>
       </table>
     </td></tr>
   </table>
@@ -476,7 +565,7 @@ function buildMultiEmailHtml(
 export default function Home() {
   const [campaign, setCampaign] = useState<Campaign>(initialCampaign);
   const [products, setProducts] = useState<ProductOffer[]>(initialProducts);
-  const [template, setTemplate] = useState<TemplateMode>("multi");
+  const [template, setTemplate] = useState<TemplateMode>("single");
   const [catalogColumns, setCatalogColumns] = useState<CatalogColumns>(1);
   const [selectedId, setSelectedId] = useState(initialProducts[0].id);
   const [productUrl, setProductUrl] = useState("");
@@ -488,6 +577,14 @@ export default function Home() {
   const selectedProduct =
     products.find((product) => product.id === selectedId) ?? products[0];
   const singleProduct = selectedProduct ?? activeProducts[0] ?? products[0];
+
+  useEffect(() => {
+    const urlTemplate = new URLSearchParams(window.location.search).get("template");
+    if (urlTemplate === "single" || urlTemplate === "multi") {
+      const frame = window.requestAnimationFrame(() => setTemplate(urlTemplate));
+      return () => window.cancelAnimationFrame(frame);
+    }
+  }, []);
 
   function updateCampaign<K extends keyof Campaign>(key: K, value: Campaign[K]) {
     setCampaign((current) => ({ ...current, [key]: value }));
@@ -641,6 +738,7 @@ export default function Home() {
         price: "",
         units: "",
         fob: "",
+        casePack: "",
         palletQty: "",
         truckloadQty: "",
         status: "Needs price",
@@ -705,6 +803,7 @@ export default function Home() {
         price: "",
         units: "",
         fob: "",
+        casePack: "",
         palletQty: "",
         truckloadQty: "",
         status: "Needs price",
@@ -976,6 +1075,7 @@ export default function Home() {
                         price: "",
                         units: "",
                         fob: "",
+                        casePack: "",
                         palletQty: "",
                         truckloadQty: "",
                         status: "Needs price",
@@ -996,7 +1096,7 @@ export default function Home() {
                   </button>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1460px] border-collapse text-sm">
+                  <table className="w-full min-w-[1580px] border-collapse text-sm">
                     <thead className="bg-[#f7fafc] text-left text-xs uppercase tracking-[0.1em] text-[#60788e]">
                       <tr>
                         <th className="w-12 px-4 py-3">Use</th>
@@ -1006,8 +1106,9 @@ export default function Home() {
                         <th className="px-3 py-3">Price</th>
                         <th className="px-3 py-3">Units</th>
                         <th className="px-3 py-3">FOB</th>
-                        <th className="px-3 py-3">Pallet qty</th>
-                        <th className="px-3 py-3">Truckload qty</th>
+                        <th className="px-3 py-3">Case pack</th>
+                        <th className="px-3 py-3">Units / pallet</th>
+                        <th className="px-3 py-3">Units / truck</th>
                         <th className="px-3 py-3">Status</th>
                       </tr>
                     </thead>
@@ -1133,22 +1234,29 @@ export default function Home() {
                               />
                             </td>
                           ))}
-                          {(["price", "units", "fob", "palletQty", "truckloadQty"] as const).map(
-                            (field) => (
-                              <td key={field} className="px-3 py-3 align-top">
-                                <input
-                                  className="h-9 w-28 rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-sm outline-none focus:border-[#0f75bc]"
-                                  value={product[field]}
-                                  onChange={(event) =>
-                                    updateProduct(product.id, {
-                                      [field]: event.target.value,
-                                    })
-                                  }
-                                  onClick={(event) => event.stopPropagation()}
-                                />
-                              </td>
-                            ),
-                          )}
+                          {(
+                            [
+                              "price",
+                              "units",
+                              "fob",
+                              "casePack",
+                              "palletQty",
+                              "truckloadQty",
+                            ] as const
+                          ).map((field) => (
+                            <td key={field} className="px-3 py-3 align-top">
+                              <input
+                                className="h-9 w-28 rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-sm outline-none focus:border-[#0f75bc]"
+                                value={product[field]}
+                                onChange={(event) =>
+                                  updateProduct(product.id, {
+                                    [field]: event.target.value,
+                                  })
+                                }
+                                onClick={(event) => event.stopPropagation()}
+                              />
+                            </td>
+                          ))}
                           <td className="px-3 py-3 align-top">
                             <span
                               className={`inline-flex rounded-[999px] px-2.5 py-1 text-xs font-semibold ${
@@ -1189,6 +1297,12 @@ export default function Home() {
                             : "border-[#d9e4ec] bg-white hover:bg-[#f8fbfd]"
                         }`}
                         onClick={() => setTemplate(card.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            setTemplate(card.id);
+                          }
+                        }}
+                        onMouseDown={() => setTemplate(card.id)}
                         type="button"
                       >
                         <span
@@ -1264,7 +1378,7 @@ export default function Home() {
                 </div>
                 <div className="max-h-[calc(100vh-130px)] overflow-y-auto bg-[#e9eff4] p-4">
                   {template === "single" ? (
-                    <SingleEmailPreview campaign={campaign} product={singleProduct} />
+                    <SingleEmailPreview product={singleProduct} />
                   ) : (
                     <MultiEmailPreview
                       campaign={campaign}
@@ -1282,72 +1396,159 @@ export default function Home() {
   );
 }
 
-function SingleEmailPreview({
-  campaign,
-  product,
-}: {
-  campaign: Campaign;
-  product: ProductOffer;
-}) {
+function SingleEmailPreview({ product }: { product: ProductOffer }) {
+  const detailItems = getProductDetailItems(product);
+
   return (
-    <div className="mx-auto w-full max-w-[390px] overflow-hidden border border-[#cdd9e3] bg-white shadow-sm">
-      <div className="bg-[#08263d] px-5 py-5 text-white">
-        <div className="text-lg font-bold">KMS Wholesale</div>
-        <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9fd4ff]">
-          Featured wholesale offer
+    <div className="mx-auto w-full max-w-[390px] overflow-hidden border border-[#d6dde6] bg-white shadow-sm">
+      <div className="flex items-center justify-between gap-3 border-b border-[#d6dde6] px-6 py-5">
+        <div className="text-xl font-bold text-[#132235]">KMS Wholesale</div>
+        <div className="text-right text-[9px] font-bold uppercase leading-3 tracking-[0.28em] text-[#6c7a8c]">
+          Featured
+          <br />
+          wholesale offer
         </div>
       </div>
-      <div className="p-5">
-        <div className="text-xs font-bold uppercase tracking-[0.12em] text-[#0f75bc]">
-          {product.tag}
+      <div className="flex justify-center px-6 pb-9 pt-8">
+        <img
+          alt=""
+          className="h-64 w-full max-w-[230px] object-contain"
+          src={getProductImage(product)}
+        />
+      </div>
+      <div className="px-6 pb-6">
+        <div className="text-xs font-bold uppercase tracking-[0.28em] text-[#0b5ab8]">
+          {product.tag || "Imported"}
         </div>
-        <h2 className="mt-2 text-2xl font-semibold leading-8 text-[#0d2438]">
+        <h2 className="mt-4 text-[26px] font-bold leading-[1.22] text-[#132235]">
           {product.title}
         </h2>
         {getProductIdentifierText(product) ? (
-          <div className="mt-1 text-xs font-semibold text-[#60788e]">
+          <div className="mt-4 text-sm leading-5 text-[#6c7a8c]">
             {getProductIdentifierText(product)}
           </div>
         ) : null}
-        <p className="mt-3 text-sm leading-6 text-[#49677f]">{product.summary}</p>
-        <img
-          alt=""
-          className="mt-4 h-52 w-full border border-[#e3ebf1] object-contain"
-          src={getProductImage(product)}
-        />
-        <div className="mt-4 grid grid-cols-3 gap-1">
-          <FactBlock label="Price" value={product.price || "Add"} tone="blue" />
-          <FactBlock label="Units" value={product.units || "Add"} tone="green" />
-          <FactBlock label="FOB" value={product.fob || "Add"} tone="ink" />
+      </div>
+      <EmailSpecRow
+        items={[
+          {
+            icon: Box,
+            label: "Case Pack",
+            value: getDisplayValue(product.casePack),
+          },
+          {
+            icon: Grid3X3,
+            label: "Units Per Pallet",
+            value: getDisplayValue(product.palletQty),
+          },
+          {
+            icon: Truck,
+            label: "Units Per Truck",
+            value: getDisplayValue(product.truckloadQty),
+          },
+        ]}
+      />
+      <EmailSpecRow
+        accent
+        items={[
+          { label: "Price", value: getDisplayValue(product.price) },
+          { label: "Units", value: getDisplayValue(product.units) },
+          { label: "FOB", value: getDisplayValue(product.fob) },
+        ]}
+      />
+      <div className="px-6 py-7">
+        <div className="text-sm font-bold uppercase tracking-[0.28em] text-[#132235]">
+          Product Detail
         </div>
-        <div className="mt-5 space-y-4">
-          <div>
-            <div className="text-sm font-semibold text-[#0d2438]">
-              Product Detail
+        <div className="mt-4 h-0.5 w-10 bg-[#0b5ab8]" />
+        <div className="mt-6">
+          {detailItems.map((detail, index) => (
+            <p
+              key={`${detail.label}-${index}`}
+              className={`m-0 text-base leading-7 text-[#1e3147] ${
+                index === 0 ? "" : "border-t border-[#d6dde6] pt-5"
+              } ${index === detailItems.length - 1 ? "" : "pb-5"}`}
+            >
+              <span className="font-bold uppercase tracking-[0.04em] text-[#0b5ab8]">
+                {detail.label}:
+              </span>{" "}
+              {detail.body}
+            </p>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmailSpecRow({
+  accent,
+  items,
+}: {
+  accent?: boolean;
+  items: { icon?: LucideIcon; label: string; value: string }[];
+}) {
+  return (
+    <div className="mx-6 grid grid-cols-3 border-y border-[#d6dde6]">
+      {items.map((item, index) => {
+        const Icon = item.icon;
+        return (
+          <div
+            key={item.label}
+            className={`min-w-0 px-3 py-5 ${
+              index === 0 ? "" : "border-l border-[#d6dde6]"
+            }`}
+          >
+            {Icon ? <Icon className="mb-3 text-[#132235]" size={22} /> : null}
+            <div className="text-[9px] font-bold uppercase leading-3 tracking-[0.14em] text-[#6c7a8c]">
+              {item.label}
             </div>
-            <ul className="mt-2 space-y-1.5 pl-4 text-sm leading-5 text-[#24425e]">
-              {product.bullets.map((bullet) => (
-                <li key={bullet}>{bullet}</li>
-              ))}
-            </ul>
+            <div
+              className={`mt-2 break-words text-[22px] font-bold leading-7 ${
+                accent ? "text-[#0b5ab8]" : "text-[#132235]"
+              }`}
+            >
+              {item.value}
+            </div>
           </div>
-          <div className="border border-[#e1e9ef] bg-[#f8fafc] p-3 text-xs leading-5 text-[#24425e]">
-            <div className="mb-1 font-semibold text-[#0d2438]">Deal terms</div>
-            {product.modelNumber ? <div>Model: {product.modelNumber}</div> : null}
-            {product.upc ? <div>UPC: {product.upc}</div> : null}
-            <div>Pallet: {product.palletQty || "Add"}</div>
-            <div>Truckload: {product.truckloadQty || "Add"}</div>
-            <div>Timing: {campaign.responseBy}</div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CatalogMetricStrip({ product }: { product: ProductOffer }) {
+  return (
+    <div className="mt-4 grid grid-cols-3 border-y border-[#d6dde6]">
+      {[
+        ["Price", getDisplayValue(product.price)],
+        ["Units", getDisplayValue(product.units)],
+        ["FOB", getDisplayValue(product.fob)],
+      ].map(([label, value], index) => (
+        <div
+          key={label}
+          className={`min-w-0 px-2 py-3 ${
+            index === 0 ? "" : "border-l border-[#d6dde6]"
+          }`}
+        >
+          <div className="text-[8px] font-bold uppercase tracking-[0.12em] text-[#6c7a8c]">
+            {label}
+          </div>
+          <div className="mt-1 break-words text-base font-bold leading-5 text-[#0b5ab8]">
+            {value}
           </div>
         </div>
-        <div className="mt-5 inline-flex items-center gap-2 bg-[#e32525] px-4 py-3 text-sm font-bold text-white">
-          <Mail size={15} />
-          Reply interested
-        </div>
-      </div>
-      <div className="bg-[#08263d] px-5 py-4 text-xs text-[#c9d8e5]">
-        KMS Wholesale · {campaign.exportTarget}
-      </div>
+      ))}
+    </div>
+  );
+}
+
+function CatalogLogisticsLine({ product }: { product: ProductOffer }) {
+  return (
+    <div className="mt-3 text-[9px] font-semibold uppercase leading-4 tracking-[0.12em] text-[#6c7a8c]">
+      Case {getDisplayValue(product.casePack)} | Pallet{" "}
+      {getDisplayValue(product.palletQty)} | Truck{" "}
+      {getDisplayValue(product.truckloadQty)}
     </div>
   );
 }
@@ -1362,95 +1563,78 @@ function MultiEmailPreview({
   products: ProductOffer[];
 }) {
   return (
-    <div className="mx-auto w-full max-w-[390px] overflow-hidden border border-[#cdd9e3] bg-white shadow-sm">
-      <div className="bg-[#08263d] px-5 py-5 text-white">
-        <div className="text-lg font-bold">KMS Wholesale</div>
-        <h2 className="mt-2 text-2xl font-semibold leading-7">
+    <div className="mx-auto w-full max-w-[390px] overflow-hidden border border-[#d6dde6] bg-white shadow-sm">
+      <div className="flex items-center justify-between gap-3 border-b border-[#d6dde6] px-6 py-5">
+        <div className="text-xl font-bold text-[#132235]">KMS Wholesale</div>
+        <div className="text-right text-[9px] font-bold uppercase leading-3 tracking-[0.28em] text-[#6c7a8c]">
+          Wholesale
+          <br />
+          catalog
+        </div>
+      </div>
+      <div className="px-6 pb-4 pt-7">
+        <div className="text-xs font-bold uppercase tracking-[0.28em] text-[#0b5ab8]">
+          Featured offers
+        </div>
+        <h2 className="mt-4 text-[28px] font-bold leading-[1.22] text-[#132235]">
           Houseware Closeout Deals
         </h2>
-      </div>
-      <div className="px-5 py-4 text-sm leading-6 text-[#49677f]">
-        {campaign.intro}
+        <p className="mt-4 text-sm leading-6 text-[#1e3147]">{campaign.intro}</p>
       </div>
       <div
-        className={`grid gap-3 px-4 pb-5 ${
+        className={`grid gap-3 px-4 pb-6 ${
           catalogColumns === 1 ? "grid-cols-1" : "grid-cols-2"
         }`}
       >
         {products.map((product) => (
           <article
             key={product.id}
-            className="border border-[#dfe7ee] bg-white p-2.5"
+            className="border border-[#d6dde6] bg-white p-4"
           >
-            <img
-              alt=""
-              className={`w-full border border-[#edf2f6] object-contain ${
-                catalogColumns === 1 ? "h-40" : "h-28"
-              }`}
-              src={getProductImage(product)}
-            />
-            <div className="mt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#0f75bc]">
-              {product.brand}
+            <div className="flex justify-center pb-4 pt-2">
+              <img
+                alt=""
+                className={`w-full object-contain ${
+                  catalogColumns === 1 ? "h-44 max-w-[220px]" : "h-28"
+                }`}
+                src={getProductImage(product)}
+              />
             </div>
-            <h3 className="mt-1 min-h-10 text-sm font-semibold leading-5 text-[#0d2438]">
+            <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#0b5ab8]">
+              {product.tag || product.brand}
+            </div>
+            <h3
+              className={`mt-2 font-bold text-[#132235] ${
+                catalogColumns === 1
+                  ? "text-xl leading-7"
+                  : "text-sm leading-5"
+              }`}
+            >
               {product.title}
             </h3>
             {getProductIdentifierText(product) ? (
-              <div className="mt-1 text-[10px] leading-4 text-[#60788e]">
+              <div className="mt-2 text-[10px] leading-4 text-[#6c7a8c]">
                 {getProductIdentifierText(product)}
               </div>
             ) : null}
-            <p className="mt-1 line-clamp-2 text-xs leading-4 text-[#60788e]">
+            <p
+              className={`mt-3 text-[#1e3147] ${
+                catalogColumns === 1
+                  ? "text-sm leading-6"
+                  : "line-clamp-3 text-xs leading-5"
+              }`}
+            >
               {product.summary || product.bullets[0]}
             </p>
-            <div className="mt-2 flex items-end justify-between gap-2">
-              <div className="text-base font-bold text-[#0f6faa]">
-                {product.price || "Add"}
-              </div>
-              <div className="text-right text-[10px] font-bold text-[#14833b]">
-                In stock
-                <br />
-                {product.units || "Add"}
-              </div>
-            </div>
-            <div className="mt-1 text-[10px] text-[#60788e]">
-              FOB {product.fob || "Add"} · Pallet {product.palletQty || "Add"}
-            </div>
+            <CatalogMetricStrip product={product} />
+            <CatalogLogisticsLine product={product} />
           </article>
         ))}
       </div>
-      <div className="bg-[#eef6fb] px-5 py-4 text-sm leading-5 text-[#24425e]">
-        <strong>Next step:</strong> Reply with item names and target quantities.
+      <div className="border-t border-[#d6dde6] px-6 py-5 text-sm leading-6 text-[#1e3147]">
+        <strong className="text-[#132235]">Next step:</strong> Reply with item
+        names and target quantities.
       </div>
-      <div className="bg-[#08263d] px-5 py-4 text-xs text-[#c9d8e5]">
-        KMS Wholesale · {campaign.exportTarget}
-      </div>
-    </div>
-  );
-}
-
-function FactBlock({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: "blue" | "green" | "ink";
-}) {
-  const toneClass =
-    tone === "blue"
-      ? "text-[#0f6faa]"
-      : tone === "green"
-        ? "text-[#14833b]"
-        : "text-[#0d2438]";
-
-  return (
-    <div className="bg-[#eef6fb] p-3">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#60788e]">
-        {label}
-      </div>
-      <div className={`mt-1 text-base font-bold ${toneClass}`}>{value}</div>
     </div>
   );
 }
