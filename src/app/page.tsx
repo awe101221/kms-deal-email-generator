@@ -428,9 +428,7 @@ function buildProductFeatureRowsHtml(product: ProductOffer) {
   const features = getProductFeatures(product);
   if (!features.length) return "";
 
-  return `<tr><td style="padding:28px 0 0;">
-            <div style="font-size:13px;line-height:17px;font-weight:700;letter-spacing:3.4px;text-transform:uppercase;color:#132235;">Features</div>
-            <div style="width:38px;height:2px;background:#0b5ab8;margin:14px 0 19px;"></div>
+  return `<tr><td style="padding:14px 0 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
               ${features
                 .map(
@@ -829,7 +827,7 @@ function FeatureListEditor({
           Add
         </button>
       </div>
-      <div className="mt-2 grid gap-2">
+      <div className="mt-2 grid gap-2 lg:grid-cols-3">
         {featureInputs.map((feature, index) => (
           <div
             key={`feature-${index}`}
@@ -1554,27 +1552,25 @@ export default function Home() {
                   </button>
                 </div>
                 <div className="overflow-x-auto">
-                  <div className="min-w-[1180px] text-sm">
-                    <div className="grid grid-cols-[48px_86px_minmax(270px,1.2fr)_190px_minmax(390px,1.6fr)_96px] items-center gap-2 border-b border-[#e1e9ef] bg-[#f7fafc] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
+                  <div className="min-w-[1120px] text-sm">
+                    <div className="grid grid-cols-[40px_minmax(610px,1.5fr)_minmax(350px,0.85fr)_50px] items-center gap-3 border-b border-[#e1e9ef] bg-[#f7fafc] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
                       <div>Use</div>
-                      <div>Image</div>
-                      <div>Product Copy</div>
-                      <div>Identifiers</div>
-                      <div>Offer Terms</div>
+                      <div>Product Details</div>
+                      <div>Wholesale Terms</div>
                       <div>Status</div>
                     </div>
                     <div className="divide-y divide-[#edf2f6]">
                       {products.map((product) => (
                         <div
                           key={product.id}
-                          className={`grid grid-cols-[48px_86px_minmax(270px,1.2fr)_190px_minmax(390px,1.6fr)_96px] items-start gap-2 px-4 py-4 transition ${
+                          className={`grid grid-cols-[40px_minmax(610px,1.5fr)_minmax(350px,0.85fr)_50px] items-start gap-3 px-4 py-4 transition ${
                             selectedId === product.id
                               ? "bg-[#eef6fb] shadow-[inset_3px_0_0_#0f75bc]"
                               : "bg-white hover:bg-[#fbfdff]"
                           }`}
                           onClick={() => setSelectedId(product.id)}
                         >
-                          <div className="flex h-full items-start justify-center pt-10">
+                          <div className="flex h-full items-start justify-center pt-14">
                             <input
                               checked={product.active}
                               className="size-4 accent-[#0f75bc]"
@@ -1587,118 +1583,116 @@ export default function Home() {
                               type="checkbox"
                             />
                           </div>
-                          <label
-                            className="group relative grid h-[86px] w-[86px] cursor-pointer place-items-center overflow-hidden rounded-[7px] border border-[#dfe7ee] bg-white"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setSelectedId(product.id);
-                            }}
-                            title="Change product picture"
-                          >
-                            <img
-                              alt=""
-                              className="h-full w-full object-contain"
-                              src={getProductImage(product)}
-                            />
-                            <span className="absolute inset-x-0 bottom-0 inline-flex items-center justify-center gap-1 bg-[#08263d]/85 px-2 py-1 text-[10px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
-                              <ImagePlus size={12} />
-                              Change
-                            </span>
-                            <input
-                              className="hidden"
-                              type="file"
-                              accept="image/*"
-                              onChange={(event) =>
-                                void replaceProductImage(product.id, event)
-                              }
-                              onClick={(event) => event.stopPropagation()}
-                            />
-                          </label>
-                          <div className="grid gap-2">
-                            <OfferTextAreaField
-                              className="min-h-[64px] resize-none font-semibold"
-                              label="Product Title"
-                              placeholder="Product title"
-                              rows={2}
-                              value={product.title}
-                              onChange={(value) =>
-                                updateProduct(product.id, { title: value })
-                              }
-                              onFocus={() => setSelectedId(product.id)}
-                            />
-                            <div className="grid grid-cols-2 gap-2">
-                              <OfferInputField
-                                label="Brand"
-                                placeholder="Brand"
-                                value={product.brand}
+                          <div className="grid min-w-0 grid-cols-[150px_minmax(0,1fr)] gap-3">
+                            <div className="min-w-0">
+                              <label
+                                className="group relative grid h-[150px] w-[150px] cursor-pointer place-items-center overflow-hidden rounded-[8px] border border-[#dfe7ee] bg-white shadow-sm"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setSelectedId(product.id);
+                                }}
+                                title="Change product picture"
+                              >
+                                <img
+                                  alt=""
+                                  className="h-full w-full object-contain p-2"
+                                  src={getProductImage(product)}
+                                />
+                                <span className="absolute inset-x-0 bottom-0 inline-flex items-center justify-center gap-1 bg-[#08263d]/85 px-2 py-1.5 text-[10px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+                                  <ImagePlus size={12} />
+                                  Change image
+                                </span>
+                                <input
+                                  className="hidden"
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(event) =>
+                                    void replaceProductImage(product.id, event)
+                                  }
+                                  onClick={(event) => event.stopPropagation()}
+                                />
+                              </label>
+                              <div className="mt-2 text-center text-[10px] font-semibold uppercase leading-3 tracking-[0.1em] text-[#60788e]">
+                                Product Image
+                              </div>
+                            </div>
+                            <div className="grid min-w-0 gap-2">
+                              <OfferTextAreaField
+                                className="min-h-[60px] resize-none font-semibold"
+                                label="Product Title"
+                                placeholder="Product title"
+                                rows={2}
+                                value={product.title}
                                 onChange={(value) =>
-                                  updateProduct(product.id, { brand: value })
+                                  updateProduct(product.id, { title: value })
                                 }
                                 onFocus={() => setSelectedId(product.id)}
                               />
-                              <OfferInputField
-                                label="Image URL"
-                                placeholder={
-                                  product.image.startsWith("data:")
-                                    ? "Uploaded image in use"
-                                    : "Image URL"
-                                }
-                                value={getImageUrlInputValue(product)}
-                                onChange={(value) =>
-                                  updateProduct(product.id, {
-                                    image: value.trim(),
-                                  })
-                                }
-                                onFocus={() => setSelectedId(product.id)}
-                              />
-                            </div>
-                            <OfferTextAreaField
-                              className="min-h-[64px] resize-none"
-                              label="Buyer-Facing Description"
-                              placeholder="Product description"
-                              rows={2}
-                              value={product.summary}
-                              onChange={(value) =>
-                                updateProduct(product.id, { summary: value })
-                              }
-                              onFocus={() => setSelectedId(product.id)}
-                            />
-                            <FeatureListEditor
-                              features={product.bullets}
-                              onAdd={() => addProductFeature(product.id)}
-                              onChange={(index, value) =>
-                                updateProductFeature(product.id, index, value)
-                              }
-                              onFocus={() => setSelectedId(product.id)}
-                              onRemove={(index) =>
-                                removeProductFeature(product.id, index)
-                              }
-                            />
-                          </div>
-                          <div className="grid h-full content-start gap-2 rounded-[8px] border border-[#e4ebf1] bg-[#f8fbfd] p-3">
-                            <div className="h-7 text-[10px] font-semibold uppercase leading-7 tracking-[0.12em] text-[#60788e]">
-                              Metadata
-                            </div>
-                            <div className="grid gap-2">
-                              {identifierFieldConfigs.map((field) => (
+                              <div className="grid grid-cols-[minmax(150px,0.7fr)_minmax(0,1.3fr)] gap-2">
                                 <OfferInputField
-                                  key={field.key}
-                                  label={field.label}
-                                  placeholder={field.placeholder}
-                                  value={product[field.key]}
+                                  label="Brand"
+                                  placeholder="Brand"
+                                  value={product.brand}
                                   onChange={(value) =>
-                                    updateProduct(product.id, {
-                                      [field.key]: value,
-                                    } as Partial<ProductOffer>)
+                                    updateProduct(product.id, { brand: value })
                                   }
                                   onFocus={() => setSelectedId(product.id)}
                                 />
-                              ))}
+                                <OfferInputField
+                                  label="Image URL"
+                                  placeholder={
+                                    product.image.startsWith("data:")
+                                      ? "Uploaded image in use"
+                                      : "Image URL"
+                                  }
+                                  value={getImageUrlInputValue(product)}
+                                  onChange={(value) =>
+                                    updateProduct(product.id, {
+                                      image: value.trim(),
+                                    })
+                                  }
+                                  onFocus={() => setSelectedId(product.id)}
+                                />
+                              </div>
+                            </div>
+                            <div className="col-span-2">
+                              <OfferTextAreaField
+                                className="min-h-[88px] resize-none"
+                                label="Buyer-Facing Description"
+                                placeholder="Product description"
+                                rows={3}
+                                value={product.summary}
+                                onChange={(value) =>
+                                  updateProduct(product.id, { summary: value })
+                                }
+                                onFocus={() => setSelectedId(product.id)}
+                              />
                             </div>
                           </div>
-                          <div className="grid h-full content-start gap-3">
-                            <div className="rounded-[8px] border border-[#e4ebf1] bg-[#f8fbfd] p-3">
-                              <div className="mb-2 h-7 text-[10px] font-semibold uppercase leading-7 tracking-[0.12em] text-[#60788e]">
+                          <div className="grid h-full content-start gap-3 rounded-[8px] border border-[#e4ebf1] bg-[#f8fbfd] p-3">
+                            <div>
+                              <div className="mb-2 text-[10px] font-semibold uppercase leading-4 tracking-[0.12em] text-[#60788e]">
+                                Metadata
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                {identifierFieldConfigs.map((field) => (
+                                  <OfferInputField
+                                    key={field.key}
+                                    label={field.label}
+                                    placeholder={field.placeholder}
+                                    value={product[field.key]}
+                                    onChange={(value) =>
+                                      updateProduct(product.id, {
+                                        [field.key]: value,
+                                      } as Partial<ProductOffer>)
+                                    }
+                                    onFocus={() => setSelectedId(product.id)}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="mb-2 text-[10px] font-semibold uppercase leading-4 tracking-[0.12em] text-[#60788e]">
                                 Commercial Terms
                               </div>
                               <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-2">
@@ -1718,8 +1712,8 @@ export default function Home() {
                                 ))}
                               </div>
                             </div>
-                            <div className="rounded-[8px] border border-[#e4ebf1] bg-[#f8fbfd] p-3">
-                              <div className="mb-2 h-7 text-[10px] font-semibold uppercase leading-7 tracking-[0.12em] text-[#60788e]">
+                            <div>
+                              <div className="mb-2 text-[10px] font-semibold uppercase leading-4 tracking-[0.12em] text-[#60788e]">
                                 Logistics
                               </div>
                               <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-2">
@@ -1740,7 +1734,7 @@ export default function Home() {
                               </div>
                             </div>
                           </div>
-                          <div className="pt-7">
+                          <div className="pt-4">
                             <span
                               className={`inline-flex rounded-[999px] px-2.5 py-1 text-xs font-semibold ${
                                 product.status === "Ready"
@@ -1754,6 +1748,19 @@ export default function Home() {
                             >
                               {product.status}
                             </span>
+                          </div>
+                          <div className="col-start-2 col-end-4">
+                            <FeatureListEditor
+                              features={product.bullets}
+                              onAdd={() => addProductFeature(product.id)}
+                              onChange={(index, value) =>
+                                updateProductFeature(product.id, index, value)
+                              }
+                              onFocus={() => setSelectedId(product.id)}
+                              onRemove={(index) =>
+                                removeProductFeature(product.id, index)
+                              }
+                            />
                           </div>
                         </div>
                       ))}
@@ -1871,12 +1878,8 @@ function SingleEmailPreview({ product }: { product: ProductOffer }) {
           {productDetail}
         </p>
         {features.length > 0 ? (
-          <div className="mt-6 border-t border-[#d6dde6] pt-5">
-            <div className="text-xs font-bold uppercase tracking-[0.24em] text-[#132235]">
-              Features
-            </div>
-            <div className="mt-3 h-0.5 w-9 bg-[#0b5ab8]" />
-            <ul className="m-0 mt-5 space-y-3 p-0">
+          <div className="mt-3">
+            <ul className="m-0 space-y-2 p-0">
               {features.map((feature, index) => (
                 <li
                   key={`${feature}-${index}`}
