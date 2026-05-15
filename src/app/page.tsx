@@ -98,6 +98,14 @@ const initialCampaign: Campaign = {
   exportTarget: "Outlook + Gmail compatible HTML",
 };
 
+const exportTargetOptions = [
+  "Outlook + Gmail compatible HTML",
+  "Outlook desktop HTML",
+  "Gmail paste-ready HTML",
+  "Klaviyo / ESP HTML",
+  "Plain HTML archive",
+];
+
 const initialProducts: ProductOffer[] = [
   {
     id: "cozzia-chair",
@@ -1221,13 +1229,19 @@ export default function Home() {
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#60788e]">
                       Export target
                     </span>
-                    <input
-                      className="mt-2 h-10 w-full rounded-[8px] border border-[#cbd9e3] bg-white px-3 text-sm outline-none focus:border-[#0f75bc]"
+                    <select
+                      className="mt-2 h-10 w-full rounded-[8px] border border-[#cbd9e3] bg-white px-3 text-sm text-[#12283b] outline-none focus:border-[#0f75bc]"
                       value={campaign.exportTarget}
                       onChange={(event) =>
                         updateCampaign("exportTarget", event.target.value)
                       }
-                    />
+                    >
+                      {exportTargetOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                 </div>
               </div>
