@@ -1246,6 +1246,84 @@ export default function Home() {
                 </div>
               </div>
 
+              <div className="rounded-[8px] border border-[#d9e4ec] bg-white p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#0d2438]">
+                  <Table2 size={17} className="text-[#0f75bc]" />
+                  Template style
+                </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  {templateCards.map((card) => {
+                    const Icon = card.icon;
+                    const active = template === card.id;
+                    return (
+                      <button
+                        key={card.id}
+                        className={`flex items-start gap-3 rounded-[8px] border p-4 text-left transition ${
+                          active
+                            ? "border-[#0f75bc] bg-[#eef6fb]"
+                            : "border-[#d9e4ec] bg-white hover:bg-[#f8fbfd]"
+                        }`}
+                        onClick={() => setTemplate(card.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            setTemplate(card.id);
+                          }
+                        }}
+                        onMouseDown={() => setTemplate(card.id)}
+                        type="button"
+                      >
+                        <span
+                          className={`grid size-10 shrink-0 place-items-center rounded-[8px] ${
+                            active
+                              ? "bg-[#0f75bc] text-white"
+                              : "bg-[#edf3f7] text-[#24425e]"
+                          }`}
+                        >
+                          <Icon size={19} />
+                        </span>
+                        <span>
+                          <span className="block font-semibold text-[#0d2438]">
+                            {card.label}
+                          </span>
+                          <span className="mt-1 block text-sm leading-5 text-[#60788e]">
+                            {card.description}
+                          </span>
+                        </span>
+                        <ChevronRight
+                          className="ml-auto mt-2 text-[#8aa0b3]"
+                          size={17}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+                {template === "multi" ? (
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[#d9e4ec] bg-[#f8fbfd] p-3">
+                    <div>
+                      <div className="text-sm font-semibold text-[#0d2438]">
+                        Catalog row layout
+                      </div>
+                    </div>
+                    <div className="inline-flex rounded-[8px] border border-[#cbd9e3] bg-white p-1">
+                      {([1, 2] as const).map((columns) => (
+                        <button
+                          key={columns}
+                          className={`h-8 rounded-[6px] px-3 text-xs font-semibold transition ${
+                            catalogColumns === columns
+                              ? "bg-[#0f75bc] text-white"
+                              : "text-[#24425e] hover:bg-[#eef6fb]"
+                          }`}
+                          onClick={() => setCatalogColumns(columns)}
+                          type="button"
+                        >
+                          {columns} per row
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
               <div className="grid gap-4 rounded-[8px] border border-[#d9e4ec] bg-white p-4 lg:grid-cols-[1fr_auto]">
                 <div>
                   <div className="flex items-center gap-2 text-sm font-semibold text-[#0d2438]">
@@ -1550,84 +1628,6 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="rounded-[8px] border border-[#d9e4ec] bg-white p-4">
-                <div className="flex items-center gap-2 text-sm font-semibold text-[#0d2438]">
-                  <Table2 size={17} className="text-[#0f75bc]" />
-                  Template style
-                </div>
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  {templateCards.map((card) => {
-                    const Icon = card.icon;
-                    const active = template === card.id;
-                    return (
-                      <button
-                        key={card.id}
-                        className={`flex items-start gap-3 rounded-[8px] border p-4 text-left transition ${
-                          active
-                            ? "border-[#0f75bc] bg-[#eef6fb]"
-                            : "border-[#d9e4ec] bg-white hover:bg-[#f8fbfd]"
-                        }`}
-                        onClick={() => setTemplate(card.id)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            setTemplate(card.id);
-                          }
-                        }}
-                        onMouseDown={() => setTemplate(card.id)}
-                        type="button"
-                      >
-                        <span
-                          className={`grid size-10 shrink-0 place-items-center rounded-[8px] ${
-                            active
-                              ? "bg-[#0f75bc] text-white"
-                              : "bg-[#edf3f7] text-[#24425e]"
-                          }`}
-                        >
-                          <Icon size={19} />
-                        </span>
-                        <span>
-                          <span className="block font-semibold text-[#0d2438]">
-                            {card.label}
-                          </span>
-                          <span className="mt-1 block text-sm leading-5 text-[#60788e]">
-                            {card.description}
-                          </span>
-                        </span>
-                        <ChevronRight
-                          className="ml-auto mt-2 text-[#8aa0b3]"
-                          size={17}
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-                {template === "multi" ? (
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[#d9e4ec] bg-[#f8fbfd] p-3">
-                    <div>
-                      <div className="text-sm font-semibold text-[#0d2438]">
-                        Catalog row layout
-                      </div>
-                    </div>
-                    <div className="inline-flex rounded-[8px] border border-[#cbd9e3] bg-white p-1">
-                      {([1, 2] as const).map((columns) => (
-                        <button
-                          key={columns}
-                          className={`h-8 rounded-[6px] px-3 text-xs font-semibold transition ${
-                            catalogColumns === columns
-                              ? "bg-[#0f75bc] text-white"
-                              : "text-[#24425e] hover:bg-[#eef6fb]"
-                          }`}
-                          onClick={() => setCatalogColumns(columns)}
-                          type="button"
-                        >
-                          {columns} per row
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
               </div>
             </section>
 
