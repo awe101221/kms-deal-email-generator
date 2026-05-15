@@ -842,10 +842,17 @@ export default function Home() {
       setProductUrl("");
       setImportMessage(payload.importNote);
     } catch (error) {
-      setImportMessage(
+      const message =
         error instanceof Error
-          ? `${error.message} Use manual upload if the retailer blocks extraction.`
-          : "Could not import this product. Use manual upload if the retailer blocks extraction.",
+          ? error.message
+          : "Could not import this product.";
+      const manualUploadMessage =
+        "Use manual upload if the retailer blocks extraction.";
+
+      setImportMessage(
+        /manual upload|retailer blocks/i.test(message)
+          ? message
+          : `${message} ${manualUploadMessage}`,
       );
     } finally {
       setImportState("idle");

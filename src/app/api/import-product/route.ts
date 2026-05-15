@@ -52,7 +52,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(extractProduct(result.html, result.url));
+    if (isBlockedProductPage(result.html, result.url)) {
+      return NextResponse.json(
+        {
+          error:
+            "Walmart blocked automated extraction for this product page. No product was added. Use manual upload for the image and paste the product details manually.",
+        },
+        { status: 422 },
+      );
+    }
+
+    return NextResponse.json(extractProduct(result.html, result.url, url));
   } catch (error) {
     return NextResponse.json(
       {
@@ -116,10 +126,28 @@ function getFetchCandidates(url: URL) {
 }
 
 function looksLikeProductPage(html: string) {
+  if (isBlockedProductPage(html)) return false;
+
   return Boolean(
     html.match(/id=["']productTitle["']/i) ||
       html.match(/type=["']application\/ld\+json["']/i) ||
       html.match(/<meta[^>]+property=["']og:title["']/i),
+  );
+}
+
+function isBlockedProductPage(html: string, url?: URL) {
+  const title = getTitle(html).toLowerCase();
+  const text = cleanText(html).toLowerCase();
+  const pathname = url?.pathname.toLowerCase() ?? "";
+
+  return Boolean(
+    pathname.includes("/blocked") ||
+      title === "robot or human?" ||
+      text.includes("robot or human?") ||
+      text.includes("are you a robot") ||
+      text.includes("verify you are human") ||
+      text.includes("press and hold") ||
+      html.match(/px-captcha|g-recaptcha|h-captcha|blocked\?url=/i),
   );
 }
 
@@ -142,8 +170,8 @@ function parseProductUrl(value?: string) {
   return url;
 }
 
-function extractProduct(html: string, url: URL): ImportedProduct {
-  const host = url.hostname.replace(/^www\./, "");
+function extractProduct(html: string, url: URL, sourceUrl = url): ImportedProduct {
+  const host = sourceUrl.hostname.replace(/^www\./, "");
   const jsonProduct = findJsonLdProduct(html);
   const pageTitle = stripRetailSuffix(
     pickFirst([
@@ -157,7 +185,7 @@ function extractProduct(html: string, url: URL): ImportedProduct {
   const brand = pickFirst([
     getBrandName(jsonProduct?.brand),
     getAmazonBrand(html),
-    getMeta(html, ["product:brand", "og:site_name"]),
+    getMeta(html, ["product:brand"]),
     titleBrandGuess(pageTitle),
     hostLabel(host),
   ]);
@@ -165,7 +193,9 @@ function extractProduct(html: string, url: URL): ImportedProduct {
     asText(jsonProduct?.mpn),
     asText(jsonProduct?.model),
     asText(jsonProduct?.sku),
-    getMeta(html, ["product:model", "product:retailer_item_id"]),
+    getMeta(html, ["product:model"]),
+    modelFromTitleGuess(pageTitle),
+    getMeta(html, ["product:retailer_item_id"]),
   ]);
   const upc = pickFirst([
     asText(jsonProduct?.gtin12),
@@ -204,7 +234,7 @@ function extractProduct(html: string, url: URL): ImportedProduct {
         ? bullets
         : ["Review imported product content", "Add buyer-facing selling points"],
     source: `${hostLabel(host)} import`,
-    sourceUrl: url.toString(),
+    sourceUrl: sourceUrl.toString(),
     importNote: image
       ? "Product content imported. Add wholesale price, units, FOB, pallet qty, and truckload qty."
       : "Imported available text, but no product image was found. Use manual upload if needed.",
@@ -460,6 +490,19 @@ function urlTitleGuess(url: URL) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function modelFromTitleGuess(title: string) {
+  const modelTokens = cleanText(title).match(
+    /\b[A-Z0-9]{2,}(?:-[A-Z0-9]{2,})*\b/g,
+  );
+
+  return (
+    modelTokens
+      ?.filter((token) => /[A-Z]/.test(token) && /\d/.test(token))
+      .filter((token) => token.replace(/-/g, "").length >= 5)
+      .at(-1) ?? ""
+  );
+}
+
 function hostLabel(host: string) {
   if (host.includes("amazon")) return "Amazon";
   if (host.includes("walmart")) return "Walmart";
@@ -472,5 +515,8 @@ function hostLabel(host: string) {
 }
 
 function titleBrandGuess(title: string) {
-  return cleanText(title).split(/\s+/).slice(0, 2).join(" ");
+  const firstWord = cleanText(title).split(/\s+/)[0] ?? "";
+  if (!firstWord || /^\d/.test(firstWord)) return "";
+
+  return firstWord.replace(/[^a-z0-9&+-]/gi, "");
 }
