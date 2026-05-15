@@ -32,6 +32,15 @@ type CatalogColumns = 1 | 2;
 type ProductStatus = "Ready" | "Needs price" | "Needs image" | "Needs terms";
 type ImportState = "idle" | "loading";
 type ProductImageResolver = (product: ProductOffer) => string;
+type ProductTextField =
+  | "modelNumber"
+  | "upc"
+  | "price"
+  | "units"
+  | "fob"
+  | "casePack"
+  | "palletQty"
+  | "truckloadQty";
 
 type Campaign = {
   subject: string;
@@ -239,6 +248,78 @@ const templateCards = [
     icon: Grid3X3,
   },
 ];
+
+const identifierFieldConfigs = [
+  {
+    key: "modelNumber",
+    label: "Model #",
+    placeholder: "Model #",
+    hint: "Metadata under product title",
+  },
+  {
+    key: "upc",
+    label: "UPC",
+    placeholder: "UPC",
+    hint: "Metadata under product title",
+  },
+] as const satisfies readonly {
+  key: ProductTextField;
+  label: string;
+  placeholder: string;
+  hint: string;
+}[];
+
+const commercialFieldConfigs = [
+  {
+    key: "price",
+    label: "Price",
+    placeholder: "$0.00",
+    hint: "Price block in preview",
+  },
+  {
+    key: "units",
+    label: "Units",
+    placeholder: "Available units",
+    hint: "Units block in preview",
+  },
+  {
+    key: "fob",
+    label: "FOB",
+    placeholder: "FOB location",
+    hint: "FOB block in preview",
+  },
+] as const satisfies readonly {
+  key: ProductTextField;
+  label: string;
+  placeholder: string;
+  hint: string;
+}[];
+
+const logisticsFieldConfigs = [
+  {
+    key: "casePack",
+    label: "Case Pack",
+    placeholder: "Case pack",
+    hint: "Top spec row",
+  },
+  {
+    key: "palletQty",
+    label: "Units Per Pallet",
+    placeholder: "Units per pallet",
+    hint: "Top spec row",
+  },
+  {
+    key: "truckloadQty",
+    label: "Units Per Truckload",
+    placeholder: "Units per truckload",
+    hint: "Top spec row",
+  },
+] as const satisfies readonly {
+  key: ProductTextField;
+  label: string;
+  placeholder: string;
+  hint: string;
+}[];
 
 function escapeHtml(value: string) {
   return value
@@ -477,7 +558,7 @@ function buildSingleEmailHtml(
                 )}">${escapeHtml(
                   getDisplayValue(product.palletQty),
                 )}</div></td>
-                <td width="33.33%" style="padding:20px 0 20px 12px;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6c7a8c;">Units Per Truck</div><div style="${getEmailMetricValueStyle(
+                <td width="33.33%" style="padding:20px 0 20px 12px;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6c7a8c;">Units Per Truckload</div><div style="${getEmailMetricValueStyle(
                   product.truckloadQty,
                 )}">${escapeHtml(
                   getDisplayValue(product.truckloadQty),
@@ -583,9 +664,9 @@ function buildMultiEmailHtml(
             </table>
             <div style="font-size:11px;line-height:18px;color:#6c7a8c;margin-top:12px;text-transform:uppercase;letter-spacing:1px;">Case pack ${escapeHtml(
               getDisplayValue(product.casePack),
-            )} &nbsp; | &nbsp; Pallet ${escapeHtml(
+            )} &nbsp; | &nbsp; Units per pallet ${escapeHtml(
               getDisplayValue(product.palletQty),
-            )} &nbsp; | &nbsp; Truck ${escapeHtml(
+            )} &nbsp; | &nbsp; Units per truckload ${escapeHtml(
               getDisplayValue(product.truckloadQty),
             )}</div>
           </td></tr>
@@ -641,6 +722,87 @@ function buildMultiEmailHtml(
   </table>
 </body>
 </html>`;
+}
+
+function OfferInputField({
+  hint,
+  label,
+  onChange,
+  onFocus,
+  placeholder,
+  value,
+}: {
+  hint: string;
+  label: string;
+  onChange: (value: string) => void;
+  onFocus: () => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <label
+      className="block min-w-0"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
+        {label}
+      </span>
+      <input
+        className="mt-1 h-9 w-full rounded-[6px] border border-[#d9e4ec] bg-white px-2.5 text-sm text-[#102536] outline-none transition focus:border-[#0f75bc] focus:shadow-[0_0_0_3px_rgba(15,117,188,0.10)]"
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onClick={(event) => event.stopPropagation()}
+        onFocus={onFocus}
+      />
+      <span className="mt-1 block text-[10px] leading-3 text-[#7b91a5]">
+        {hint}
+      </span>
+    </label>
+  );
+}
+
+function OfferTextAreaField({
+  className = "",
+  hint,
+  label,
+  onChange,
+  onFocus,
+  placeholder,
+  rows = 1,
+  value,
+}: {
+  className?: string;
+  hint: string;
+  label: string;
+  onChange: (value: string) => void;
+  onFocus: () => void;
+  placeholder: string;
+  rows?: number;
+  value: string;
+}) {
+  return (
+    <label
+      className="block min-w-0"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
+        {label}
+      </span>
+      <textarea
+        className={`mt-1 w-full resize-y rounded-[6px] border border-[#d9e4ec] bg-white px-2.5 py-2 text-sm leading-5 text-[#102536] outline-none transition focus:border-[#0f75bc] focus:shadow-[0_0_0_3px_rgba(15,117,188,0.10)] ${className}`}
+        placeholder={placeholder}
+        rows={rows}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onClick={(event) => event.stopPropagation()}
+        onFocus={onFocus}
+      />
+      <span className="mt-1 block text-[10px] leading-3 text-[#7b91a5]">
+        {hint}
+      </span>
+    </label>
+  );
 }
 
 export default function Home() {
@@ -1184,20 +1346,15 @@ export default function Home() {
                   </button>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1580px] border-collapse text-sm">
+                  <table className="w-full min-w-[1360px] border-collapse text-sm">
                     <thead className="bg-[#f7fafc] text-left text-xs uppercase tracking-[0.1em] text-[#60788e]">
                       <tr>
                         <th className="w-12 px-4 py-3">Use</th>
-                        <th className="px-3 py-3">Product</th>
-                        <th className="px-3 py-3">Model #</th>
-                        <th className="px-3 py-3">UPC</th>
-                        <th className="px-3 py-3">Price</th>
-                        <th className="px-3 py-3">Units</th>
-                        <th className="px-3 py-3">FOB</th>
-                        <th className="px-3 py-3">Case pack</th>
-                        <th className="px-3 py-3">Units / pallet</th>
-                        <th className="px-3 py-3">Units / truck</th>
-                        <th className="px-3 py-3">Status</th>
+                        <th className="w-[430px] px-3 py-3">Product copy</th>
+                        <th className="w-[250px] px-3 py-3">Identifiers</th>
+                        <th className="w-[320px] px-3 py-3">Commercial terms</th>
+                        <th className="w-[350px] px-3 py-3">Logistics</th>
+                        <th className="w-[120px] px-3 py-3">Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1222,11 +1379,14 @@ export default function Home() {
                               type="checkbox"
                             />
                           </td>
-                          <td className="px-3 py-3">
+                          <td className="px-3 py-3 align-top">
                             <div className="flex items-start gap-3">
                               <label
                                 className="group relative grid h-24 w-24 shrink-0 cursor-pointer place-items-center overflow-hidden rounded-[6px] border border-[#dfe7ee] bg-white"
-                                onClick={(event) => event.stopPropagation()}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setSelectedId(product.id);
+                                }}
                                 title="Change product picture"
                               >
                                 <img
@@ -1248,103 +1408,119 @@ export default function Home() {
                                   onClick={(event) => event.stopPropagation()}
                                 />
                               </label>
-                              <div className="min-w-0 flex-1 space-y-2">
-                                <textarea
-                                  aria-label={`${product.title} title`}
-                                  className="min-h-8 w-full resize-y overflow-hidden rounded-[6px] border border-transparent bg-transparent px-2 py-1.5 font-semibold leading-5 text-[#102536] outline-none transition-[min-height,box-shadow] hover:border-[#cbd9e3] focus:min-h-24 focus:border-[#0f75bc] focus:bg-white focus:shadow-[0_8px_20px_rgba(15,117,188,0.12)]"
-                                  rows={1}
+                              <div className="min-w-0 flex-1 space-y-3">
+                                <OfferTextAreaField
+                                  className="min-h-[72px] font-semibold"
+                                  hint="Main headline in the email preview"
+                                  label="Product title"
+                                  placeholder="Product title"
+                                  rows={2}
                                   value={product.title}
-                                  onChange={(event) =>
-                                    updateProduct(product.id, {
-                                      title: event.target.value,
-                                    })
+                                  onChange={(value) =>
+                                    updateProduct(product.id, { title: value })
                                   }
-                                  onKeyDown={(event) => {
-                                    if (event.key === "Enter") event.preventDefault();
-                                  }}
-                                  onClick={(event) => event.stopPropagation()}
+                                  onFocus={() => setSelectedId(product.id)}
                                 />
-                                <input
-                                  aria-label={`${product.title} brand`}
-                                  className="h-8 w-full rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-xs font-semibold text-[#24425e] outline-none focus:border-[#0f75bc]"
-                                  placeholder="Brand"
-                                  value={product.brand}
-                                  onChange={(event) =>
-                                    updateProduct(product.id, {
-                                      brand: event.target.value,
-                                    })
-                                  }
-                                  onClick={(event) => event.stopPropagation()}
-                                />
-                                <input
-                                  aria-label={`${product.title} image URL`}
-                                  className="h-8 w-full rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-xs text-[#24425e] outline-none focus:border-[#0f75bc]"
-                                  placeholder={
-                                    product.image.startsWith("data:")
-                                      ? "Uploaded image in use; paste image URL to replace"
-                                      : "Image URL"
-                                  }
-                                  value={getImageUrlInputValue(product)}
-                                  onChange={(event) =>
-                                    updateProduct(product.id, {
-                                      image: event.target.value.trim(),
-                                    })
-                                  }
-                                  onClick={(event) => event.stopPropagation()}
-                                />
-                                <textarea
-                                  aria-label={`${product.title} product description`}
-                                  className="min-h-14 w-full resize-y overflow-hidden rounded-[6px] border border-[#d9e4ec] bg-white px-2 py-2 text-xs leading-5 text-[#24425e] outline-none transition-[min-height,box-shadow] focus:min-h-40 focus:overflow-auto focus:border-[#0f75bc] focus:shadow-[0_8px_20px_rgba(15,117,188,0.12)]"
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                  <OfferInputField
+                                    hint="Brand/tag shown in product table"
+                                    label="Brand"
+                                    placeholder="Brand"
+                                    value={product.brand}
+                                    onChange={(value) =>
+                                      updateProduct(product.id, { brand: value })
+                                    }
+                                    onFocus={() => setSelectedId(product.id)}
+                                  />
+                                  <OfferInputField
+                                    hint="Hero image source"
+                                    label="Image URL"
+                                    placeholder={
+                                      product.image.startsWith("data:")
+                                        ? "Uploaded image in use; paste image URL to replace"
+                                        : "Image URL"
+                                    }
+                                    value={getImageUrlInputValue(product)}
+                                    onChange={(value) =>
+                                      updateProduct(product.id, {
+                                        image: value.trim(),
+                                      })
+                                    }
+                                    onFocus={() => setSelectedId(product.id)}
+                                  />
+                                </div>
+                                <OfferTextAreaField
+                                  className="min-h-[92px]"
+                                  hint="Product overview in Product Detail"
+                                  label="Buyer-facing description"
                                   placeholder="Product description"
+                                  rows={3}
                                   value={product.summary}
-                                  onChange={(event) =>
-                                    updateProduct(product.id, {
-                                      summary: event.target.value,
-                                    })
+                                  onChange={(value) =>
+                                    updateProduct(product.id, { summary: value })
                                   }
-                                  onClick={(event) => event.stopPropagation()}
+                                  onFocus={() => setSelectedId(product.id)}
                                 />
                               </div>
                             </div>
                           </td>
-                          {(["modelNumber", "upc"] as const).map((field) => (
-                            <td key={field} className="px-3 py-3 align-top">
-                              <input
-                                className="h-9 w-32 rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-sm outline-none focus:border-[#0f75bc]"
-                                placeholder={field === "modelNumber" ? "Model #" : "UPC"}
-                                value={product[field]}
-                                onChange={(event) =>
-                                  updateProduct(product.id, {
-                                    [field]: event.target.value,
-                                  })
-                                }
-                                onClick={(event) => event.stopPropagation()}
-                              />
-                            </td>
-                          ))}
-                          {(
-                            [
-                              "price",
-                              "units",
-                              "fob",
-                              "casePack",
-                              "palletQty",
-                              "truckloadQty",
-                            ] as const
-                          ).map((field) => (
-                            <td key={field} className="px-3 py-3 align-top">
-                              <input
-                                className="h-9 w-28 rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-sm outline-none focus:border-[#0f75bc]"
-                                value={product[field]}
-                                onChange={(event) =>
-                                  updateProduct(product.id, {
-                                    [field]: event.target.value,
-                                  })
-                                }
-                                onClick={(event) => event.stopPropagation()}
-                              />
-                            </td>
-                          ))}
+                          <td className="px-3 py-3 align-top">
+                            <div className="grid gap-3">
+                              {identifierFieldConfigs.map((field) => (
+                                <OfferInputField
+                                  key={field.key}
+                                  hint={field.hint}
+                                  label={field.label}
+                                  placeholder={field.placeholder}
+                                  value={product[field.key]}
+                                  onChange={(value) =>
+                                    updateProduct(product.id, {
+                                      [field.key]: value,
+                                    } as Partial<ProductOffer>)
+                                  }
+                                  onFocus={() => setSelectedId(product.id)}
+                                />
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 align-top">
+                            <div className="grid grid-cols-3 gap-2">
+                              {commercialFieldConfigs.map((field) => (
+                                <OfferInputField
+                                  key={field.key}
+                                  hint={field.hint}
+                                  label={field.label}
+                                  placeholder={field.placeholder}
+                                  value={product[field.key]}
+                                  onChange={(value) =>
+                                    updateProduct(product.id, {
+                                      [field.key]: value,
+                                    } as Partial<ProductOffer>)
+                                  }
+                                  onFocus={() => setSelectedId(product.id)}
+                                />
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 align-top">
+                            <div className="grid grid-cols-3 gap-2">
+                              {logisticsFieldConfigs.map((field) => (
+                                <OfferInputField
+                                  key={field.key}
+                                  hint={field.hint}
+                                  label={field.label}
+                                  placeholder={field.placeholder}
+                                  value={product[field.key]}
+                                  onChange={(value) =>
+                                    updateProduct(product.id, {
+                                      [field.key]: value,
+                                    } as Partial<ProductOffer>)
+                                  }
+                                  onFocus={() => setSelectedId(product.id)}
+                                />
+                              ))}
+                            </div>
+                          </td>
                           <td className="px-3 py-3 align-top">
                             <span
                               className={`inline-flex rounded-[999px] px-2.5 py-1 text-xs font-semibold ${
@@ -1526,12 +1702,12 @@ function SingleEmailPreview({ product }: { product: ProductOffer }) {
           },
           {
             icon: Grid3X3,
-            label: "Pallet",
+            label: "Units Per Pallet",
             value: getDisplayValue(product.palletQty),
           },
           {
             icon: Truck,
-            label: "Truckload",
+            label: "Units Per Truckload",
             value: getDisplayValue(product.truckloadQty),
           },
         ]}
@@ -1588,7 +1764,7 @@ function EmailSpecRow({
             }`}
           >
             {Icon ? <Icon className="mb-2.5 text-[#132235]" size={17} /> : null}
-            <div className="text-[8px] font-bold uppercase leading-[11px] tracking-[0.08em] text-[#6c7a8c]">
+            <div className="text-[7px] font-bold uppercase leading-[10px] tracking-[0.04em] text-[#6c7a8c]">
               {item.label}
             </div>
             <div
@@ -1632,8 +1808,8 @@ function CatalogMetricStrip({ product }: { product: ProductOffer }) {
 function CatalogLogisticsLine({ product }: { product: ProductOffer }) {
   return (
     <div className="mt-3 text-[9px] font-semibold uppercase leading-4 tracking-[0.12em] text-[#6c7a8c]">
-      Case {getDisplayValue(product.casePack)} | Pallet{" "}
-      {getDisplayValue(product.palletQty)} | Truck{" "}
+      Case {getDisplayValue(product.casePack)} | Units per pallet{" "}
+      {getDisplayValue(product.palletQty)} | Units per truckload{" "}
       {getDisplayValue(product.truckloadQty)}
     </div>
   );
