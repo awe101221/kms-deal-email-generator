@@ -14,6 +14,7 @@ import {
   Inbox,
   LayoutDashboard,
   Link2,
+  Minus,
   MousePointer2,
   PackageCheck,
   Plus,
@@ -69,11 +70,6 @@ type ProductOffer = {
   tag: string;
   summary: string;
   bullets: string[];
-};
-
-type ProductDetailItem = {
-  label: string;
-  body: string;
 };
 
 type ImportedProduct = {
@@ -418,61 +414,34 @@ function getPreviewMetricValueClass(value: string, accent = false) {
   return `mt-2 text-[20px] font-bold leading-6 ${colorClass}`;
 }
 
-function getDetailLabelFromText(text: string) {
-  const words = text
-    .replace(/[^a-z0-9\s&+-]/gi, " ")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  return words.slice(0, 3).join(" ") || "Product detail";
+function getProductDetailText(product: ProductOffer) {
+  return (
+    product.summary.trim() || "Add a buyer-facing product description before export."
+  );
 }
 
-function getProductDetailItems(product: ProductOffer): ProductDetailItem[] {
-  const detailItems: ProductDetailItem[] = [];
-
-  if (product.summary.trim()) {
-    detailItems.push({
-      label: "Product overview",
-      body: product.summary.trim(),
-    });
-  }
-
-  product.bullets.forEach((bullet) => {
-    const trimmedBullet = bullet.trim();
-    if (!trimmedBullet) return;
-
-    const dividerIndex = trimmedBullet.indexOf(":");
-    if (dividerIndex > 0) {
-      detailItems.push({
-        label: trimmedBullet.slice(0, dividerIndex),
-        body: trimmedBullet.slice(dividerIndex + 1).trim(),
-      });
-      return;
-    }
-
-    detailItems.push({
-      label: getDetailLabelFromText(trimmedBullet),
-      body: trimmedBullet,
-    });
-  });
-
-  return detailItems.length > 0
-    ? detailItems
-    : [{ label: "Product detail", body: "Add product detail before export." }];
+function getProductFeatures(product: ProductOffer) {
+  return product.bullets.map((feature) => feature.trim()).filter(Boolean);
 }
 
-function buildProductDetailRowsHtml(product: ProductOffer) {
-  return getProductDetailItems(product)
-    .map((detail, index) => {
-      const dividerStyle =
-        index === 0 ? "" : "border-top:1px solid #d6dde6;";
+function buildProductFeatureRowsHtml(product: ProductOffer) {
+  const features = getProductFeatures(product);
+  if (!features.length) return "";
 
-      return `<tr><td style="${dividerStyle}padding:${index === 0 ? "0 0 18px" : "18px 0"};font-size:15px;line-height:24px;color:#1e3147;"><span style="font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#0b5ab8;">${escapeHtml(
-        detail.label,
-      )}:</span> ${escapeHtml(detail.body)}</td></tr>`;
-    })
-    .join("");
+  return `<tr><td style="padding:28px 0 0;">
+            <div style="font-size:13px;line-height:17px;font-weight:700;letter-spacing:3.4px;text-transform:uppercase;color:#132235;">Features</div>
+            <div style="width:38px;height:2px;background:#0b5ab8;margin:14px 0 19px;"></div>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+              ${features
+                .map(
+                  (feature) =>
+                    `<tr><td width="18" style="padding:0 8px 10px 0;vertical-align:top;font-size:18px;line-height:22px;color:#0b5ab8;">&bull;</td><td style="padding:0 0 10px;vertical-align:top;font-size:15px;line-height:23px;color:#1e3147;">${escapeHtml(
+                      feature,
+                    )}</td></tr>`,
+                )
+                .join("")}
+            </table>
+          </td></tr>`;
 }
 
 function getProductStatus(product: ProductOffer): ProductStatus {
@@ -497,7 +466,8 @@ function buildSingleEmailHtml(
   resolveImage: ProductImageResolver = getProductImage,
 ) {
   const preheader = `${campaign.subject} | ${product.title}`;
-  const detailRows = buildProductDetailRowsHtml(product);
+  const productDetail = getProductDetailText(product);
+  const featureRows = buildProductFeatureRowsHtml(product);
 
   return `<!doctype html>
 <html>
@@ -595,7 +565,10 @@ function buildSingleEmailHtml(
             <div style="font-size:13px;line-height:17px;font-weight:700;letter-spacing:3.4px;text-transform:uppercase;color:#132235;">Product Detail</div>
             <div style="width:38px;height:2px;background:#0b5ab8;margin:14px 0 23px;"></div>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-              ${detailRows}
+              <tr><td style="padding:0;font-size:15px;line-height:24px;color:#1e3147;">${escapeHtml(
+                productDetail,
+              )}</td></tr>
+              ${featureRows}
             </table>
           </td>
         </tr>
@@ -808,6 +781,104 @@ function OfferTextAreaField({
   );
 }
 
+function FeatureListEditor({
+  features,
+  onAdd,
+  onChange,
+  onFocus,
+  onRemove,
+}: {
+  features: string[];
+  onAdd: () => void;
+  onChange: (index: number, value: string) => void;
+  onFocus: () => void;
+  onRemove: (index: number) => void;
+}) {
+  const featureInputs = features.length > 0 ? features : [""];
+
+  return (
+    <div
+      className="rounded-[8px] border border-[#e4ebf1] bg-[#f8fbfd] p-2.5"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[10px] font-semibold uppercase leading-4 tracking-[0.1em] text-[#60788e]">
+          Key Features
+        </div>
+        <button
+          aria-label="Add key feature"
+          className="inline-flex h-7 items-center gap-1 rounded-[6px] border border-[#cbd9e3] bg-white px-2 text-[11px] font-semibold text-[#24425e] hover:bg-[#eef6fb]"
+          onClick={(event) => {
+            event.stopPropagation();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              event.stopPropagation();
+              onAdd();
+            }
+          }}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onAdd();
+          }}
+          type="button"
+        >
+          <Plus size={13} />
+          Add
+        </button>
+      </div>
+      <div className="mt-2 grid gap-2">
+        {featureInputs.map((feature, index) => (
+          <div
+            key={`feature-${index}`}
+            className="grid grid-cols-[minmax(0,1fr)_34px] items-end gap-2"
+          >
+            <label className="block min-w-0">
+              <span className="flex min-h-5 items-end text-[10px] font-semibold uppercase leading-[11px] tracking-[0.1em] text-[#60788e]">
+                Feature {index + 1}
+              </span>
+              <input
+                className="mt-1 h-9 w-full rounded-[6px] border border-[#d9e4ec] bg-white px-2.5 text-sm text-[#102536] outline-none transition focus:border-[#0f75bc] focus:shadow-[0_0_0_3px_rgba(15,117,188,0.10)]"
+                placeholder="Key buyer feature"
+                value={feature}
+                onChange={(event) => onChange(index, event.target.value)}
+                onClick={(event) => event.stopPropagation()}
+                onFocus={onFocus}
+              />
+            </label>
+            <button
+              aria-label={`Remove feature ${index + 1}`}
+              className="grid h-9 w-[34px] place-items-center rounded-[6px] border border-[#cbd9e3] bg-white text-[#60788e] hover:border-[#0f75bc] hover:text-[#0f75bc] disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={featureInputs.length <= 1}
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onRemove(index);
+                }
+              }}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onRemove(index);
+              }}
+              title="Remove feature"
+              type="button"
+            >
+              <Minus size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [campaign, setCampaign] = useState<Campaign>(initialCampaign);
   const [products, setProducts] = useState<ProductOffer[]>(initialProducts);
@@ -847,6 +918,52 @@ export default function Home() {
           status: patch.status ?? getProductStatus(nextProduct),
         };
       }),
+    );
+  }
+
+  function updateProductFeatures(
+    id: string,
+    updater: (features: string[]) => string[],
+  ) {
+    setProducts((current) =>
+      current.map((product) => {
+        if (product.id !== id) return product;
+
+        const currentFeatures = product.bullets.length > 0 ? product.bullets : [""];
+        const nextFeatures = updater(currentFeatures);
+        const nextProduct = {
+          ...product,
+          bullets: nextFeatures.length > 0 ? nextFeatures : [""],
+        };
+
+        return {
+          ...nextProduct,
+          status: getProductStatus(nextProduct),
+        };
+      }),
+    );
+  }
+
+  function addProductFeature(id: string) {
+    setSelectedId(id);
+    updateProductFeatures(id, (features) => [...features, ""]);
+  }
+
+  function updateProductFeature(id: string, index: number, value: string) {
+    setSelectedId(id);
+    updateProductFeatures(id, (features) =>
+      features.map((feature, featureIndex) =>
+        featureIndex === index ? value : feature,
+      ),
+    );
+  }
+
+  function removeProductFeature(id: string, index: number) {
+    setSelectedId(id);
+    updateProductFeatures(id, (features) =>
+      features.length > 1
+        ? features.filter((_, featureIndex) => featureIndex !== index)
+        : features,
     );
   }
 
@@ -995,7 +1112,11 @@ export default function Home() {
         bullets:
           payload.bullets?.length > 0
             ? payload.bullets
-            : ["Review imported product content", "Add wholesale terms"],
+            : [
+                "Review imported product content",
+                "Add buyer-facing selling point",
+                "Add wholesale feature or spec",
+              ],
       };
       const nextProduct = {
         ...nextProductBase,
@@ -1418,7 +1539,7 @@ export default function Home() {
                         status: "Needs price",
                         tag: "Manual",
                         summary: "Add a buyer-facing product description.",
-                        bullets: ["Add buyer highlights"],
+                        bullets: ["", "", ""],
                       };
                       setProducts((current) => [
                         { ...nextProduct, status: getProductStatus(nextProduct) },
@@ -1541,6 +1662,17 @@ export default function Home() {
                                 updateProduct(product.id, { summary: value })
                               }
                               onFocus={() => setSelectedId(product.id)}
+                            />
+                            <FeatureListEditor
+                              features={product.bullets}
+                              onAdd={() => addProductFeature(product.id)}
+                              onChange={(index, value) =>
+                                updateProductFeature(product.id, index, value)
+                              }
+                              onFocus={() => setSelectedId(product.id)}
+                              onRemove={(index) =>
+                                removeProductFeature(product.id, index)
+                              }
                             />
                           </div>
                           <div className="grid h-full content-start gap-2 rounded-[8px] border border-[#e4ebf1] bg-[#f8fbfd] p-3">
@@ -1670,7 +1802,8 @@ export default function Home() {
 }
 
 function SingleEmailPreview({ product }: { product: ProductOffer }) {
-  const detailItems = getProductDetailItems(product);
+  const productDetail = getProductDetailText(product);
+  const features = getProductFeatures(product);
 
   return (
     <div className="mx-auto w-full max-w-[390px] overflow-hidden border border-[#d6dde6] bg-white shadow-sm">
@@ -1734,21 +1867,28 @@ function SingleEmailPreview({ product }: { product: ProductOffer }) {
           Product Detail
         </div>
         <div className="mt-3 h-0.5 w-9 bg-[#0b5ab8]" />
-        <div className="mt-5">
-          {detailItems.map((detail, index) => (
-            <p
-              key={`${detail.label}-${index}`}
-              className={`m-0 text-[13px] leading-[22px] text-[#1e3147] ${
-                index === 0 ? "" : "border-t border-[#d6dde6] pt-4"
-              } ${index === detailItems.length - 1 ? "" : "pb-4"}`}
-            >
-              <span className="font-bold uppercase tracking-normal text-[#0b5ab8]">
-                {detail.label}:
-              </span>{" "}
-              {detail.body}
-            </p>
-          ))}
-        </div>
+        <p className="m-0 mt-5 text-[13px] leading-[22px] text-[#1e3147]">
+          {productDetail}
+        </p>
+        {features.length > 0 ? (
+          <div className="mt-6 border-t border-[#d6dde6] pt-5">
+            <div className="text-xs font-bold uppercase tracking-[0.24em] text-[#132235]">
+              Features
+            </div>
+            <div className="mt-3 h-0.5 w-9 bg-[#0b5ab8]" />
+            <ul className="m-0 mt-5 space-y-3 p-0">
+              {features.map((feature, index) => (
+                <li
+                  key={`${feature}-${index}`}
+                  className="flex gap-2 text-[13px] leading-[21px] text-[#1e3147]"
+                >
+                  <span className="mt-[7px] block size-1.5 shrink-0 rounded-full bg-[#0b5ab8]" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
     </div>
   );
