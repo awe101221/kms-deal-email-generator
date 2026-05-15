@@ -46,7 +46,6 @@ type ProductTextField =
 type Campaign = {
   subject: string;
   intro: string;
-  buyer: string;
   responseBy: string;
   exportTarget: string;
 };
@@ -89,7 +88,6 @@ const initialCampaign: Campaign = {
   subject: "KMS Wholesale | Featured closeout opportunities",
   intro:
     "Below are buyer-ready wholesale opportunities available now. Reply with the items and quantities you want to review, and our team will confirm availability.",
-  buyer: "Retail buyer / category manager",
   responseBy: "This week",
   exportTarget: "Outlook + Gmail compatible HTML",
 };
@@ -1324,26 +1322,6 @@ export default function Home() {
                   </label>
                 </div>
                 <div className="grid gap-3">
-                  <label className="block">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#60788e]">
-                      Buyer type
-                    </span>
-                    <input
-                      className="mt-2 h-10 w-full rounded-[8px] border border-[#cbd9e3] bg-white px-3 text-sm outline-none focus:border-[#0f75bc]"
-                      value={campaign.buyer}
-                      onChange={(event) => updateCampaign("buyer", event.target.value)}
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#60788e]">
-                      Response timing
-                    </span>
-                    <input
-                      className="mt-2 h-10 w-full rounded-[8px] border border-[#cbd9e3] bg-white px-3 text-sm outline-none focus:border-[#0f75bc]"
-                      value={campaign.responseBy}
-                      onChange={(event) => updateCampaign("responseBy", event.target.value)}
-                    />
-                  </label>
                   <label className="block">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#60788e]">
                       Export target
