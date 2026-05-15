@@ -270,7 +270,7 @@ function buildProductIdentifierHtml(product: ProductOffer) {
   const identifierText = getProductIdentifierText(product);
   if (!identifierText) return "";
 
-  return `<div style="font-size:16px;line-height:24px;color:#6c7a8c;margin:0;">${escapeHtml(
+  return `<div style="font-size:14px;line-height:22px;color:#6c7a8c;margin:0;">${escapeHtml(
     identifierText,
   )}</div>`;
 }
@@ -278,6 +278,66 @@ function buildProductIdentifierHtml(product: ProductOffer) {
 function getDisplayValue(value: string, fallback = "Add") {
   const trimmedValue = value.trim();
   return trimmedValue || fallback;
+}
+
+function getMetricTextLength(value: string) {
+  return getDisplayValue(value).replace(/\s+/g, "").length;
+}
+
+function getEmailMetricValueStyle(value: string, accent = false) {
+  const textLength = getMetricTextLength(value);
+  const color = accent ? "#0b5ab8" : "#132235";
+  let fontSize = accent ? 27 : 24;
+  let lineHeight = accent ? 32 : 29;
+
+  if (textLength >= 7) {
+    fontSize = accent ? 23 : 21;
+    lineHeight = accent ? 28 : 26;
+  }
+
+  if (textLength >= 11) {
+    fontSize = 17;
+    lineHeight = 22;
+  }
+
+  return `margin-top:7px;font-size:${fontSize}px;line-height:${lineHeight}px;font-weight:700;color:${color};word-break:normal;overflow-wrap:normal;`;
+}
+
+function getEmailCatalogMetricValueStyle(value: string) {
+  const textLength = getMetricTextLength(value);
+  let fontSize = 20;
+  let lineHeight = 24;
+
+  if (textLength >= 7) {
+    fontSize = 18;
+    lineHeight = 22;
+  }
+
+  if (textLength >= 11) {
+    fontSize = 15;
+    lineHeight = 20;
+  }
+
+  return `margin-top:6px;font-size:${fontSize}px;line-height:${lineHeight}px;font-weight:700;color:#0b5ab8;word-break:normal;overflow-wrap:normal;`;
+}
+
+function getPreviewMetricValueClass(value: string, accent = false) {
+  const textLength = getMetricTextLength(value);
+  const colorClass = accent ? "text-[#0b5ab8]" : "text-[#132235]";
+
+  if (textLength >= 14) {
+    return `mt-2 text-[12px] font-bold leading-4 ${colorClass}`;
+  }
+
+  if (textLength >= 8) {
+    return `mt-2 text-[14px] font-bold leading-[18px] ${colorClass}`;
+  }
+
+  if (textLength >= 6) {
+    return `mt-2 text-[17px] font-bold leading-5 ${colorClass}`;
+  }
+
+  return `mt-2 text-[20px] font-bold leading-6 ${colorClass}`;
 }
 
 function getDetailLabelFromText(text: string) {
@@ -330,7 +390,7 @@ function buildProductDetailRowsHtml(product: ProductOffer) {
       const dividerStyle =
         index === 0 ? "" : "border-top:1px solid #d6dde6;";
 
-      return `<tr><td style="${dividerStyle}padding:${index === 0 ? "0 0 20px" : "20px 0"};font-size:17px;line-height:27px;color:#1e3147;"><span style="font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#0b5ab8;">${escapeHtml(
+      return `<tr><td style="${dividerStyle}padding:${index === 0 ? "0 0 18px" : "18px 0"};font-size:15px;line-height:24px;color:#1e3147;"><span style="font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#0b5ab8;">${escapeHtml(
         detail.label,
       )}:</span> ${escapeHtml(detail.body)}</td></tr>`;
     })
@@ -386,18 +446,18 @@ function buildSingleEmailHtml(
           </td>
         </tr>
         <tr>
-          <td align="center" style="padding:36px 44px 40px;">
-            <img src="${escapeHtml(resolveImage(product))}" width="300" alt="${escapeHtml(
+          <td align="center" style="padding:32px 44px 34px;">
+            <img src="${escapeHtml(resolveImage(product))}" width="280" alt="${escapeHtml(
               product.title,
-            )}" style="display:block;width:300px;max-width:80%;height:auto;border:0;outline:none;text-decoration:none;">
+            )}" style="display:block;width:280px;max-width:78%;height:auto;border:0;outline:none;text-decoration:none;">
           </td>
         </tr>
         <tr>
           <td style="padding:0 44px 28px;">
-            <div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#0b5ab8;margin:0 0 18px;">${escapeHtml(
+            <div style="font-size:11px;line-height:15px;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;color:#0b5ab8;margin:0 0 15px;">${escapeHtml(
               product.tag || "Imported",
             )}</div>
-            <h1 style="margin:0 0 22px;font-size:38px;line-height:46px;font-weight:700;color:#132235;">${escapeHtml(
+            <h1 style="margin:0 0 18px;font-size:34px;line-height:41px;font-weight:700;color:#132235;">${escapeHtml(
               product.title,
             )}</h1>
             ${buildProductIdentifierHtml(product)}
@@ -407,13 +467,19 @@ function buildSingleEmailHtml(
           <td style="padding:0 44px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #d6dde6;border-bottom:1px solid #d6dde6;">
               <tr>
-                <td width="33.33%" style="padding:26px 16px 26px 0;border-right:1px solid #d6dde6;"><div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6c7a8c;">Case Pack</div><div style="margin-top:8px;font-size:25px;line-height:30px;font-weight:700;color:#132235;">${escapeHtml(
+                <td width="33.33%" style="padding:20px 12px 20px 0;border-right:1px solid #d6dde6;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6c7a8c;">Case Pack</div><div style="${getEmailMetricValueStyle(
+                  product.casePack,
+                )}">${escapeHtml(
                   getDisplayValue(product.casePack),
                 )}</div></td>
-                <td width="33.33%" style="padding:26px 16px;border-right:1px solid #d6dde6;"><div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6c7a8c;">Units Per Pallet</div><div style="margin-top:8px;font-size:25px;line-height:30px;font-weight:700;color:#132235;">${escapeHtml(
+                <td width="33.33%" style="padding:20px 12px;border-right:1px solid #d6dde6;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6c7a8c;">Units Per Pallet</div><div style="${getEmailMetricValueStyle(
+                  product.palletQty,
+                )}">${escapeHtml(
                   getDisplayValue(product.palletQty),
                 )}</div></td>
-                <td width="33.33%" style="padding:26px 0 26px 16px;"><div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6c7a8c;">Units Per Truck</div><div style="margin-top:8px;font-size:25px;line-height:30px;font-weight:700;color:#132235;">${escapeHtml(
+                <td width="33.33%" style="padding:20px 0 20px 12px;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6c7a8c;">Units Per Truck</div><div style="${getEmailMetricValueStyle(
+                  product.truckloadQty,
+                )}">${escapeHtml(
                   getDisplayValue(product.truckloadQty),
                 )}</div></td>
               </tr>
@@ -424,13 +490,22 @@ function buildSingleEmailHtml(
           <td style="padding:0 44px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-bottom:1px solid #d6dde6;">
               <tr>
-                <td width="33.33%" style="padding:28px 16px 28px 0;border-right:1px solid #d6dde6;"><div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6c7a8c;">Price</div><div style="margin-top:10px;font-size:29px;line-height:34px;font-weight:700;color:#0b5ab8;">${escapeHtml(
+                <td width="33.33%" style="padding:21px 12px 21px 0;border-right:1px solid #d6dde6;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6c7a8c;">Price</div><div style="${getEmailMetricValueStyle(
+                  product.price,
+                  true,
+                )}">${escapeHtml(
                   getDisplayValue(product.price),
                 )}</div></td>
-                <td width="33.33%" style="padding:28px 16px;border-right:1px solid #d6dde6;"><div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6c7a8c;">Units</div><div style="margin-top:10px;font-size:29px;line-height:34px;font-weight:700;color:#0b5ab8;">${escapeHtml(
+                <td width="33.33%" style="padding:21px 12px;border-right:1px solid #d6dde6;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6c7a8c;">Units</div><div style="${getEmailMetricValueStyle(
+                  product.units,
+                  true,
+                )}">${escapeHtml(
                   getDisplayValue(product.units),
                 )}</div></td>
-                <td width="33.33%" style="padding:28px 0 28px 16px;"><div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6c7a8c;">FOB</div><div style="margin-top:10px;font-size:29px;line-height:34px;font-weight:700;color:#0b5ab8;">${escapeHtml(
+                <td width="33.33%" style="padding:21px 0 21px 12px;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6c7a8c;">FOB</div><div style="${getEmailMetricValueStyle(
+                  product.fob,
+                  true,
+                )}">${escapeHtml(
                   getDisplayValue(product.fob),
                 )}</div></td>
               </tr>
@@ -438,9 +513,9 @@ function buildSingleEmailHtml(
           </td>
         </tr>
         <tr>
-          <td style="padding:40px 44px 30px;">
-            <div style="font-size:14px;line-height:18px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#132235;">Product Detail</div>
-            <div style="width:40px;height:2px;background:#0b5ab8;margin:16px 0 26px;"></div>
+          <td style="padding:34px 44px 28px;">
+            <div style="font-size:13px;line-height:17px;font-weight:700;letter-spacing:3.4px;text-transform:uppercase;color:#132235;">Product Detail</div>
+            <div style="width:38px;height:2px;background:#0b5ab8;margin:14px 0 23px;"></div>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
               ${detailRows}
             </table>
@@ -474,7 +549,7 @@ function buildMultiEmailHtml(
             <div style="font-size:11px;line-height:15px;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;color:#0b5ab8;">${escapeHtml(
               product.tag || product.brand,
             )}</div>
-            <div style="font-size:${catalogColumns === 1 ? "24px" : "18px"};line-height:${catalogColumns === 1 ? "31px" : "23px"};font-weight:700;color:#132235;margin-top:10px;">${escapeHtml(
+            <div style="font-size:${catalogColumns === 1 ? "22px" : "17px"};line-height:${catalogColumns === 1 ? "28px" : "22px"};font-weight:700;color:#132235;margin-top:10px;">${escapeHtml(
               product.title,
             )}</div>
             ${
@@ -484,18 +559,24 @@ function buildMultiEmailHtml(
                   )}</div>`
                 : ""
             }
-            <div style="font-size:14px;line-height:22px;color:#1e3147;margin-top:12px;">${escapeHtml(
+            <div style="font-size:13px;line-height:21px;color:#1e3147;margin-top:12px;">${escapeHtml(
               product.summary || product.bullets[0] || "",
             )}</div>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border-top:1px solid #d6dde6;border-bottom:1px solid #d6dde6;margin-top:18px;">
               <tr>
-                <td width="33.33%" style="padding:16px 10px 16px 0;border-right:1px solid #d6dde6;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6c7a8c;">Price</div><div style="margin-top:6px;font-size:22px;line-height:26px;font-weight:700;color:#0b5ab8;">${escapeHtml(
+                <td width="33.33%" style="padding:14px 8px 14px 0;border-right:1px solid #d6dde6;"><div style="font-size:9px;line-height:13px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6c7a8c;">Price</div><div style="${getEmailCatalogMetricValueStyle(
+                  product.price,
+                )}">${escapeHtml(
                   getDisplayValue(product.price),
                 )}</div></td>
-                <td width="33.33%" style="padding:16px 10px;border-right:1px solid #d6dde6;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6c7a8c;">Units</div><div style="margin-top:6px;font-size:22px;line-height:26px;font-weight:700;color:#0b5ab8;">${escapeHtml(
+                <td width="33.33%" style="padding:14px 8px;border-right:1px solid #d6dde6;"><div style="font-size:9px;line-height:13px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6c7a8c;">Units</div><div style="${getEmailCatalogMetricValueStyle(
+                  product.units,
+                )}">${escapeHtml(
                   getDisplayValue(product.units),
                 )}</div></td>
-                <td width="33.33%" style="padding:16px 0 16px 10px;"><div style="font-size:10px;line-height:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6c7a8c;">FOB</div><div style="margin-top:6px;font-size:22px;line-height:26px;font-weight:700;color:#0b5ab8;">${escapeHtml(
+                <td width="33.33%" style="padding:14px 0 14px 8px;"><div style="font-size:9px;line-height:13px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6c7a8c;">FOB</div><div style="${getEmailCatalogMetricValueStyle(
+                  product.fob,
+                )}">${escapeHtml(
                   getDisplayValue(product.fob),
                 )}</div></td>
               </tr>
@@ -545,9 +626,9 @@ function buildMultiEmailHtml(
           </td>
         </tr>
         <tr><td style="padding:34px 44px 10px;">
-          <div style="font-size:12px;line-height:16px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#0b5ab8;margin:0 0 16px;">Featured offers</div>
-          <h1 style="margin:0 0 16px;font-size:38px;line-height:46px;font-weight:700;color:#132235;">Houseware Closeout Deals</h1>
-          <div style="font-size:16px;line-height:26px;color:#1e3147;">${escapeHtml(
+          <div style="font-size:11px;line-height:15px;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;color:#0b5ab8;margin:0 0 14px;">Featured offers</div>
+          <h1 style="margin:0 0 14px;font-size:34px;line-height:41px;font-weight:700;color:#132235;">Houseware Closeout Deals</h1>
+          <div style="font-size:15px;line-height:24px;color:#1e3147;">${escapeHtml(
           campaign.intro,
         )}</div>
         </td></tr>
@@ -1401,30 +1482,30 @@ function SingleEmailPreview({ product }: { product: ProductOffer }) {
 
   return (
     <div className="mx-auto w-full max-w-[390px] overflow-hidden border border-[#d6dde6] bg-white shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-[#d6dde6] px-6 py-5">
-        <div className="text-xl font-bold text-[#132235]">KMS Wholesale</div>
-        <div className="text-right text-[9px] font-bold uppercase leading-3 tracking-[0.28em] text-[#6c7a8c]">
+      <div className="flex items-center justify-between gap-3 border-b border-[#d6dde6] px-5 py-4">
+        <div className="text-lg font-bold text-[#132235]">KMS Wholesale</div>
+        <div className="shrink-0 text-right text-[8px] font-bold uppercase leading-[11px] tracking-[0.22em] text-[#6c7a8c]">
           Featured
           <br />
           wholesale offer
         </div>
       </div>
-      <div className="flex justify-center px-6 pb-9 pt-8">
+      <div className="flex justify-center px-5 pb-7 pt-6">
         <img
           alt=""
-          className="h-64 w-full max-w-[230px] object-contain"
+          className="h-56 w-full max-w-[220px] object-contain"
           src={getProductImage(product)}
         />
       </div>
-      <div className="px-6 pb-6">
-        <div className="text-xs font-bold uppercase tracking-[0.28em] text-[#0b5ab8]">
+      <div className="px-5 pb-5">
+        <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#0b5ab8]">
           {product.tag || "Imported"}
         </div>
-        <h2 className="mt-4 text-[26px] font-bold leading-[1.22] text-[#132235]">
+        <h2 className="mt-3 text-[23px] font-bold leading-[1.18] text-[#132235]">
           {product.title}
         </h2>
         {getProductIdentifierText(product) ? (
-          <div className="mt-4 text-sm leading-5 text-[#6c7a8c]">
+          <div className="mt-3 text-xs leading-5 text-[#6c7a8c]">
             {getProductIdentifierText(product)}
           </div>
         ) : null}
@@ -1438,12 +1519,12 @@ function SingleEmailPreview({ product }: { product: ProductOffer }) {
           },
           {
             icon: Grid3X3,
-            label: "Units Per Pallet",
+            label: "Pallet",
             value: getDisplayValue(product.palletQty),
           },
           {
             icon: Truck,
-            label: "Units Per Truck",
+            label: "Truckload",
             value: getDisplayValue(product.truckloadQty),
           },
         ]}
@@ -1456,20 +1537,20 @@ function SingleEmailPreview({ product }: { product: ProductOffer }) {
           { label: "FOB", value: getDisplayValue(product.fob) },
         ]}
       />
-      <div className="px-6 py-7">
-        <div className="text-sm font-bold uppercase tracking-[0.28em] text-[#132235]">
+      <div className="px-5 py-6">
+        <div className="text-xs font-bold uppercase tracking-[0.24em] text-[#132235]">
           Product Detail
         </div>
-        <div className="mt-4 h-0.5 w-10 bg-[#0b5ab8]" />
-        <div className="mt-6">
+        <div className="mt-3 h-0.5 w-9 bg-[#0b5ab8]" />
+        <div className="mt-5">
           {detailItems.map((detail, index) => (
             <p
               key={`${detail.label}-${index}`}
-              className={`m-0 text-base leading-7 text-[#1e3147] ${
-                index === 0 ? "" : "border-t border-[#d6dde6] pt-5"
-              } ${index === detailItems.length - 1 ? "" : "pb-5"}`}
+              className={`m-0 text-[13px] leading-[22px] text-[#1e3147] ${
+                index === 0 ? "" : "border-t border-[#d6dde6] pt-4"
+              } ${index === detailItems.length - 1 ? "" : "pb-4"}`}
             >
-              <span className="font-bold uppercase tracking-[0.04em] text-[#0b5ab8]">
+              <span className="font-bold uppercase tracking-normal text-[#0b5ab8]">
                 {detail.label}:
               </span>{" "}
               {detail.body}
@@ -1489,24 +1570,22 @@ function EmailSpecRow({
   items: { icon?: LucideIcon; label: string; value: string }[];
 }) {
   return (
-    <div className="mx-6 grid grid-cols-3 border-y border-[#d6dde6]">
+    <div className="mx-5 grid grid-cols-3 border-y border-[#d6dde6]">
       {items.map((item, index) => {
         const Icon = item.icon;
         return (
           <div
             key={item.label}
-            className={`min-w-0 px-3 py-5 ${
+            className={`min-w-0 px-2.5 py-4 ${
               index === 0 ? "" : "border-l border-[#d6dde6]"
             }`}
           >
-            {Icon ? <Icon className="mb-3 text-[#132235]" size={22} /> : null}
-            <div className="text-[9px] font-bold uppercase leading-3 tracking-[0.14em] text-[#6c7a8c]">
+            {Icon ? <Icon className="mb-2.5 text-[#132235]" size={17} /> : null}
+            <div className="text-[8px] font-bold uppercase leading-[11px] tracking-[0.08em] text-[#6c7a8c]">
               {item.label}
             </div>
             <div
-              className={`mt-2 break-words text-[22px] font-bold leading-7 ${
-                accent ? "text-[#0b5ab8]" : "text-[#132235]"
-              }`}
+              className={getPreviewMetricValueClass(item.value, accent)}
             >
               {item.value}
             </div>
@@ -1531,10 +1610,10 @@ function CatalogMetricStrip({ product }: { product: ProductOffer }) {
             index === 0 ? "" : "border-l border-[#d6dde6]"
           }`}
         >
-          <div className="text-[8px] font-bold uppercase tracking-[0.12em] text-[#6c7a8c]">
+          <div className="text-[8px] font-bold uppercase tracking-[0.08em] text-[#6c7a8c]">
             {label}
           </div>
-          <div className="mt-1 break-words text-base font-bold leading-5 text-[#0b5ab8]">
+          <div className={getPreviewMetricValueClass(value, true)}>
             {value}
           </div>
         </div>
@@ -1564,22 +1643,24 @@ function MultiEmailPreview({
 }) {
   return (
     <div className="mx-auto w-full max-w-[390px] overflow-hidden border border-[#d6dde6] bg-white shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-[#d6dde6] px-6 py-5">
-        <div className="text-xl font-bold text-[#132235]">KMS Wholesale</div>
-        <div className="text-right text-[9px] font-bold uppercase leading-3 tracking-[0.28em] text-[#6c7a8c]">
+      <div className="flex items-center justify-between gap-3 border-b border-[#d6dde6] px-5 py-4">
+        <div className="text-lg font-bold text-[#132235]">KMS Wholesale</div>
+        <div className="shrink-0 text-right text-[8px] font-bold uppercase leading-[11px] tracking-[0.22em] text-[#6c7a8c]">
           Wholesale
           <br />
           catalog
         </div>
       </div>
-      <div className="px-6 pb-4 pt-7">
-        <div className="text-xs font-bold uppercase tracking-[0.28em] text-[#0b5ab8]">
+      <div className="px-5 pb-4 pt-6">
+        <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#0b5ab8]">
           Featured offers
         </div>
-        <h2 className="mt-4 text-[28px] font-bold leading-[1.22] text-[#132235]">
+        <h2 className="mt-3 text-[24px] font-bold leading-[1.18] text-[#132235]">
           Houseware Closeout Deals
         </h2>
-        <p className="mt-4 text-sm leading-6 text-[#1e3147]">{campaign.intro}</p>
+        <p className="mt-3 text-[13px] leading-[22px] text-[#1e3147]">
+          {campaign.intro}
+        </p>
       </div>
       <div
         className={`grid gap-3 px-4 pb-6 ${
@@ -1606,7 +1687,7 @@ function MultiEmailPreview({
             <h3
               className={`mt-2 font-bold text-[#132235] ${
                 catalogColumns === 1
-                  ? "text-xl leading-7"
+                  ? "text-lg leading-6"
                   : "text-sm leading-5"
               }`}
             >
@@ -1620,7 +1701,7 @@ function MultiEmailPreview({
             <p
               className={`mt-3 text-[#1e3147] ${
                 catalogColumns === 1
-                  ? "text-sm leading-6"
+                  ? "text-[13px] leading-[22px]"
                   : "line-clamp-3 text-xs leading-5"
               }`}
             >
@@ -1631,7 +1712,7 @@ function MultiEmailPreview({
           </article>
         ))}
       </div>
-      <div className="border-t border-[#d6dde6] px-6 py-5 text-sm leading-6 text-[#1e3147]">
+      <div className="border-t border-[#d6dde6] px-5 py-5 text-[13px] leading-[22px] text-[#1e3147]">
         <strong className="text-[#132235]">Next step:</strong> Reply with item
         names and target quantities.
       </div>
