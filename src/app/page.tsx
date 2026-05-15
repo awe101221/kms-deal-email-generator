@@ -341,19 +341,27 @@ function buildSingleEmailHtml(
           <td style="padding:0 28px 26px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr>
-                <td width="55%" style="vertical-align:top;padding-right:24px;">
-                  <div style="font-size:16px;font-weight:700;color:#0d2438;margin-bottom:10px;">Buyer highlights</div>
+                <td style="vertical-align:top;">
+                  <div style="font-size:16px;font-weight:700;color:#0d2438;margin-bottom:10px;">Product Detail</div>
                   <ul style="padding-left:20px;margin:0;">${bullets}</ul>
                 </td>
-                <td width="45%" style="vertical-align:top;background:#f8fafc;border:1px solid #e1e9ef;padding:16px;">
-                  <div style="font-size:16px;font-weight:700;color:#0d2438;margin-bottom:12px;">Deal terms</div>
-                  <div style="font-size:14px;line-height:23px;color:#24425e;">Pallet qty: <strong>${escapeHtml(
-                    product.palletQty,
-                  )}</strong><br>Truckload qty: <strong>${escapeHtml(
-                    product.truckloadQty,
-                  )}</strong><br>Timing: <strong>${escapeHtml(
-                    campaign.responseBy,
-                  )}</strong></div>
+              </tr>
+              <tr>
+                <td style="padding-top:18px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e1e9ef;">
+                    <tr>
+                      <td style="padding:16px;">
+                        <div style="font-size:16px;font-weight:700;color:#0d2438;margin-bottom:12px;">Deal terms</div>
+                        <div style="font-size:14px;line-height:23px;color:#24425e;">Pallet qty: <strong>${escapeHtml(
+                          product.palletQty,
+                        )}</strong><br>Truckload qty: <strong>${escapeHtml(
+                          product.truckloadQty,
+                        )}</strong><br>Timing: <strong>${escapeHtml(
+                          campaign.responseBy,
+                        )}</strong></div>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
@@ -1052,33 +1060,33 @@ export default function Home() {
                                 />
                               </label>
                               <div className="min-w-0 flex-1 space-y-2">
-                                <input
-                                  className="h-8 w-full rounded-[6px] border border-transparent bg-transparent px-2 font-semibold text-[#102536] outline-none hover:border-[#cbd9e3] focus:border-[#0f75bc] focus:bg-white"
+                                <textarea
+                                  aria-label={`${product.title} title`}
+                                  className="min-h-8 w-full resize-y overflow-hidden rounded-[6px] border border-transparent bg-transparent px-2 py-1.5 font-semibold leading-5 text-[#102536] outline-none transition-[min-height,box-shadow] hover:border-[#cbd9e3] focus:min-h-24 focus:border-[#0f75bc] focus:bg-white focus:shadow-[0_8px_20px_rgba(15,117,188,0.12)]"
+                                  rows={1}
                                   value={product.title}
                                   onChange={(event) =>
                                     updateProduct(product.id, {
                                       title: event.target.value,
                                     })
                                   }
+                                  onKeyDown={(event) => {
+                                    if (event.key === "Enter") event.preventDefault();
+                                  }}
                                   onClick={(event) => event.stopPropagation()}
                                 />
-                                <div className="grid gap-2 sm:grid-cols-[minmax(0,170px)_1fr]">
-                                  <input
-                                    aria-label={`${product.title} brand`}
-                                    className="h-8 rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-xs font-semibold text-[#24425e] outline-none focus:border-[#0f75bc]"
-                                    placeholder="Brand"
-                                    value={product.brand}
-                                    onChange={(event) =>
-                                      updateProduct(product.id, {
-                                        brand: event.target.value,
-                                      })
-                                    }
-                                    onClick={(event) => event.stopPropagation()}
-                                  />
-                                  <div className="truncate px-2 py-2 text-xs text-[#60788e]">
-                                    {product.source}
-                                  </div>
-                                </div>
+                                <input
+                                  aria-label={`${product.title} brand`}
+                                  className="h-8 w-full rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-xs font-semibold text-[#24425e] outline-none focus:border-[#0f75bc]"
+                                  placeholder="Brand"
+                                  value={product.brand}
+                                  onChange={(event) =>
+                                    updateProduct(product.id, {
+                                      brand: event.target.value,
+                                    })
+                                  }
+                                  onClick={(event) => event.stopPropagation()}
+                                />
                                 <input
                                   aria-label={`${product.title} image URL`}
                                   className="h-8 w-full rounded-[6px] border border-[#d9e4ec] bg-white px-2 text-xs text-[#24425e] outline-none focus:border-[#0f75bc]"
@@ -1097,7 +1105,7 @@ export default function Home() {
                                 />
                                 <textarea
                                   aria-label={`${product.title} product description`}
-                                  className="min-h-14 w-full resize-none rounded-[6px] border border-[#d9e4ec] bg-white px-2 py-2 text-xs leading-5 text-[#24425e] outline-none focus:border-[#0f75bc]"
+                                  className="min-h-14 w-full resize-y overflow-hidden rounded-[6px] border border-[#d9e4ec] bg-white px-2 py-2 text-xs leading-5 text-[#24425e] outline-none transition-[min-height,box-shadow] focus:min-h-40 focus:overflow-auto focus:border-[#0f75bc] focus:shadow-[0_8px_20px_rgba(15,117,188,0.12)]"
                                   placeholder="Product description"
                                   value={product.summary}
                                   onChange={(event) =>
@@ -1312,10 +1320,10 @@ function SingleEmailPreview({
           <FactBlock label="Units" value={product.units || "Add"} tone="green" />
           <FactBlock label="FOB" value={product.fob || "Add"} tone="ink" />
         </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-[1fr_150px]">
+        <div className="mt-5 space-y-4">
           <div>
             <div className="text-sm font-semibold text-[#0d2438]">
-              Buyer highlights
+              Product Detail
             </div>
             <ul className="mt-2 space-y-1.5 pl-4 text-sm leading-5 text-[#24425e]">
               {product.bullets.map((bullet) => (
