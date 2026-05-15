@@ -735,7 +735,7 @@ function OfferInputField({
       className="block min-w-0"
       onClick={(event) => event.stopPropagation()}
     >
-      <span className="block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#60788e]">
+      <span className="flex min-h-7 items-end text-[10px] font-semibold uppercase leading-[11px] tracking-[0.1em] text-[#60788e]">
         {label}
       </span>
       <input
@@ -779,7 +779,7 @@ function OfferTextAreaField({
       className="block min-w-0"
       onClick={(event) => event.stopPropagation()}
     >
-      <span className="block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#60788e]">
+      <span className="flex min-h-7 items-end text-[10px] font-semibold uppercase leading-[11px] tracking-[0.1em] text-[#60788e]">
         {label}
       </span>
       <textarea
@@ -1452,7 +1452,7 @@ export default function Home() {
                             />
                           </div>
                           <div className="grid h-full content-start gap-2 rounded-[8px] border border-[#e4ebf1] bg-[#f8fbfd] p-3">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
+                            <div className="h-7 text-[10px] font-semibold uppercase leading-7 tracking-[0.12em] text-[#60788e]">
                               Metadata
                             </div>
                             <div className="grid gap-2">
@@ -1474,15 +1474,10 @@ export default function Home() {
                           </div>
                           <div className="grid h-full content-start gap-3">
                             <div className="rounded-[8px] border border-[#e4ebf1] bg-[#f8fbfd] p-3">
-                              <div className="mb-2 flex items-center justify-between gap-2">
-                                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
-                                  Commercial Terms
-                                </div>
-                                <div className="text-[10px] font-medium text-[#7b91a5]">
-                                  Price / Units / FOB
-                                </div>
+                              <div className="mb-2 h-7 text-[10px] font-semibold uppercase leading-7 tracking-[0.12em] text-[#60788e]">
+                                Commercial Terms
                               </div>
-                              <div className="grid grid-cols-3 gap-2">
+                              <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-2">
                                 {commercialFieldConfigs.map((field) => (
                                   <OfferInputField
                                     key={field.key}
@@ -1500,15 +1495,10 @@ export default function Home() {
                               </div>
                             </div>
                             <div className="rounded-[8px] border border-[#e4ebf1] bg-[#f8fbfd] p-3">
-                              <div className="mb-2 flex items-center justify-between gap-2">
-                                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
-                                  Logistics
-                                </div>
-                                <div className="text-[10px] font-medium text-[#7b91a5]">
-                                  Case / Pallet / Truckload
-                                </div>
+                              <div className="mb-2 h-7 text-[10px] font-semibold uppercase leading-7 tracking-[0.12em] text-[#60788e]">
+                                Logistics
                               </div>
-                              <div className="grid grid-cols-3 gap-2">
+                              <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-2">
                                 {logisticsFieldConfigs.map((field) => (
                                   <OfferInputField
                                     key={field.key}
