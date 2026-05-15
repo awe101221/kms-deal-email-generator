@@ -53,6 +53,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (isBlockedProductPage(result.html, result.url)) {
+      const blockedDraft = buildBlockedProductDraft(url);
+
+      if (blockedDraft) {
+        return NextResponse.json(blockedDraft);
+      }
+
       return NextResponse.json(
         {
           error:
@@ -168,6 +174,79 @@ function parseProductUrl(value?: string) {
   }
 
   return url;
+}
+
+function buildBlockedProductDraft(url: URL): ImportedProduct | null {
+  const productUrl = getBlockedWalmartProductUrl(url);
+  if (!productUrl) return null;
+
+  const host = productUrl.hostname.replace(/^www\./, "");
+  const title = stripRetailSuffix(walmartTitleFromUrl(productUrl));
+  if (!title) return null;
+
+  const itemId = walmartItemIdFromUrl(productUrl);
+
+  return {
+    title,
+    brand: titleBrandGuess(title) || hostLabel(host),
+    modelNumber: modelFromTitleGuess(title),
+    upc: "",
+    image: "",
+    summary: `${title} drafted from a Walmart URL because Walmart blocked automated extraction. Verify the product details, upload the product image, and add wholesale terms before export.`,
+    bullets: uniqueText([
+      itemId
+        ? `Walmart item ${itemId} drafted from product URL`
+        : "Drafted from Walmart product URL",
+      "Verify product specs before sending to buyers",
+      "Upload product image and add wholesale terms",
+    ]),
+    source: itemId ? `Walmart item ${itemId}` : "Walmart URL draft",
+    sourceUrl: productUrl.toString(),
+    importNote:
+      "Walmart blocked automated extraction, so a draft row was created from the URL. Upload the product image and verify all details before export.",
+  };
+}
+
+function getBlockedWalmartProductUrl(url: URL) {
+  if (!isWalmartUrl(url)) return null;
+  if (!url.pathname.toLowerCase().includes("/blocked")) return url;
+
+  const encodedUrl = url.searchParams.get("url");
+  if (!encodedUrl) return null;
+
+  try {
+    const decodedPath = decodeBase64Url(encodedUrl);
+    return new URL(decodedPath, "https://www.walmart.com");
+  } catch {
+    return null;
+  }
+}
+
+function isWalmartUrl(url: URL) {
+  return url.hostname.replace(/^www\./, "").toLowerCase().startsWith("walmart.");
+}
+
+function decodeBase64Url(value: string) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  return Buffer.from(padded, "base64").toString("utf8");
+}
+
+function walmartTitleFromUrl(url: URL) {
+  const parts = url.pathname.split("/").filter(Boolean);
+  const ipIndex = parts.findIndex((part) => part.toLowerCase() === "ip");
+  const slug = ipIndex >= 0 ? parts[ipIndex + 1] : "";
+
+  return cleanText(
+    decodeURIComponent(slug || "")
+      .replace(/[-_]+/g, " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase()),
+  );
+}
+
+function walmartItemIdFromUrl(url: URL) {
+  const parts = url.pathname.split("/").filter(Boolean);
+  return [...parts].reverse().find((part) => /^\d{6,}$/.test(part)) ?? "";
 }
 
 function extractProduct(html: string, url: URL, sourceUrl = url): ImportedProduct {
@@ -481,7 +560,9 @@ function urlTitleGuess(url: URL) {
   const parts = url.pathname
     .split("/")
     .filter(Boolean)
-    .filter((part) => !["dp", "gp", "product"].includes(part.toLowerCase()))
+    .filter(
+      (part) => !["dp", "gp", "ip", "product"].includes(part.toLowerCase()),
+    )
     .filter((part) => !/^[A-Z0-9]{10}$/i.test(part));
   const slug = parts[0] ?? "";
 
