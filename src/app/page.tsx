@@ -254,19 +254,16 @@ const identifierFieldConfigs = [
     key: "modelNumber",
     label: "Model #",
     placeholder: "Model #",
-    hint: "Metadata under product title",
   },
   {
     key: "upc",
     label: "UPC",
     placeholder: "UPC",
-    hint: "Metadata under product title",
   },
 ] as const satisfies readonly {
   key: ProductTextField;
   label: string;
   placeholder: string;
-  hint: string;
 }[];
 
 const commercialFieldConfigs = [
@@ -274,25 +271,21 @@ const commercialFieldConfigs = [
     key: "price",
     label: "Price",
     placeholder: "$0.00",
-    hint: "Price block in preview",
   },
   {
     key: "units",
     label: "Units",
     placeholder: "Available units",
-    hint: "Units block in preview",
   },
   {
     key: "fob",
     label: "FOB",
     placeholder: "FOB location",
-    hint: "FOB block in preview",
   },
 ] as const satisfies readonly {
   key: ProductTextField;
   label: string;
   placeholder: string;
-  hint: string;
 }[];
 
 const logisticsFieldConfigs = [
@@ -300,25 +293,21 @@ const logisticsFieldConfigs = [
     key: "casePack",
     label: "Case Pack",
     placeholder: "Case pack",
-    hint: "Top spec row",
   },
   {
     key: "palletQty",
     label: "Units Per Pallet",
     placeholder: "Units per pallet",
-    hint: "Top spec row",
   },
   {
     key: "truckloadQty",
     label: "Units Per Truckload",
     placeholder: "Units per truckload",
-    hint: "Top spec row",
   },
 ] as const satisfies readonly {
   key: ProductTextField;
   label: string;
   placeholder: string;
-  hint: string;
 }[];
 
 function escapeHtml(value: string) {
@@ -725,6 +714,7 @@ function buildMultiEmailHtml(
 }
 
 function OfferInputField({
+  className = "",
   hint,
   label,
   onChange,
@@ -732,7 +722,8 @@ function OfferInputField({
   placeholder,
   value,
 }: {
-  hint: string;
+  className?: string;
+  hint?: string;
   label: string;
   onChange: (value: string) => void;
   onFocus: () => void;
@@ -744,20 +735,22 @@ function OfferInputField({
       className="block min-w-0"
       onClick={(event) => event.stopPropagation()}
     >
-      <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
+      <span className="block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#60788e]">
         {label}
       </span>
       <input
-        className="mt-1 h-9 w-full rounded-[6px] border border-[#d9e4ec] bg-white px-2.5 text-sm text-[#102536] outline-none transition focus:border-[#0f75bc] focus:shadow-[0_0_0_3px_rgba(15,117,188,0.10)]"
+        className={`mt-1 h-10 w-full rounded-[6px] border border-[#d9e4ec] bg-white px-2.5 text-sm text-[#102536] outline-none transition focus:border-[#0f75bc] focus:shadow-[0_0_0_3px_rgba(15,117,188,0.10)] ${className}`}
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         onClick={(event) => event.stopPropagation()}
         onFocus={onFocus}
       />
-      <span className="mt-1 block text-[10px] leading-3 text-[#7b91a5]">
-        {hint}
-      </span>
+      {hint ? (
+        <span className="mt-1 block text-[10px] leading-3 text-[#7b91a5]">
+          {hint}
+        </span>
+      ) : null}
     </label>
   );
 }
@@ -773,7 +766,7 @@ function OfferTextAreaField({
   value,
 }: {
   className?: string;
-  hint: string;
+  hint?: string;
   label: string;
   onChange: (value: string) => void;
   onFocus: () => void;
@@ -786,11 +779,11 @@ function OfferTextAreaField({
       className="block min-w-0"
       onClick={(event) => event.stopPropagation()}
     >
-      <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
+      <span className="block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#60788e]">
         {label}
       </span>
       <textarea
-        className={`mt-1 w-full resize-y rounded-[6px] border border-[#d9e4ec] bg-white px-2.5 py-2 text-sm leading-5 text-[#102536] outline-none transition focus:border-[#0f75bc] focus:shadow-[0_0_0_3px_rgba(15,117,188,0.10)] ${className}`}
+        className={`mt-1 w-full resize-none rounded-[6px] border border-[#d9e4ec] bg-white px-2.5 py-2 text-sm leading-5 text-[#102536] outline-none transition focus:border-[#0f75bc] focus:shadow-[0_0_0_3px_rgba(15,117,188,0.10)] ${className}`}
         placeholder={placeholder}
         rows={rows}
         value={value}
@@ -798,9 +791,11 @@ function OfferTextAreaField({
         onClick={(event) => event.stopPropagation()}
         onFocus={onFocus}
       />
-      <span className="mt-1 block text-[10px] leading-3 text-[#7b91a5]">
-        {hint}
-      </span>
+      {hint ? (
+        <span className="mt-1 block text-[10px] leading-3 text-[#7b91a5]">
+          {hint}
+        </span>
+      ) : null}
     </label>
   );
 }
@@ -1346,27 +1341,27 @@ export default function Home() {
                   </button>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1360px] border-collapse text-sm">
-                    <thead className="bg-[#f7fafc] text-left text-xs uppercase tracking-[0.1em] text-[#60788e]">
-                      <tr>
-                        <th className="w-12 px-4 py-3">Use</th>
-                        <th className="w-[430px] px-3 py-3">Product copy</th>
-                        <th className="w-[250px] px-3 py-3">Identifiers</th>
-                        <th className="w-[320px] px-3 py-3">Commercial terms</th>
-                        <th className="w-[350px] px-3 py-3">Logistics</th>
-                        <th className="w-[120px] px-3 py-3">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                  <div className="min-w-[1180px] text-sm">
+                    <div className="grid grid-cols-[48px_86px_minmax(270px,1.2fr)_190px_minmax(390px,1.6fr)_96px] items-center gap-2 border-b border-[#e1e9ef] bg-[#f7fafc] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
+                      <div>Use</div>
+                      <div>Image</div>
+                      <div>Product Copy</div>
+                      <div>Identifiers</div>
+                      <div>Offer Terms</div>
+                      <div>Status</div>
+                    </div>
+                    <div className="divide-y divide-[#edf2f6]">
                       {products.map((product) => (
-                        <tr
+                        <div
                           key={product.id}
-                          className={`border-t border-[#edf2f6] ${
-                            selectedId === product.id ? "bg-[#eef6fb]" : "bg-white"
+                          className={`grid grid-cols-[48px_86px_minmax(270px,1.2fr)_190px_minmax(390px,1.6fr)_96px] items-start gap-2 px-4 py-4 transition ${
+                            selectedId === product.id
+                              ? "bg-[#eef6fb] shadow-[inset_3px_0_0_#0f75bc]"
+                              : "bg-white hover:bg-[#fbfdff]"
                           }`}
                           onClick={() => setSelectedId(product.id)}
                         >
-                          <td className="px-4 py-3 align-middle">
+                          <div className="flex h-full items-start justify-center pt-10">
                             <input
                               checked={product.active}
                               className="size-4 accent-[#0f75bc]"
@@ -1378,98 +1373,92 @@ export default function Home() {
                               onClick={(event) => event.stopPropagation()}
                               type="checkbox"
                             />
-                          </td>
-                          <td className="px-3 py-3 align-top">
-                            <div className="flex items-start gap-3">
-                              <label
-                                className="group relative grid h-24 w-24 shrink-0 cursor-pointer place-items-center overflow-hidden rounded-[6px] border border-[#dfe7ee] bg-white"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setSelectedId(product.id);
-                                }}
-                                title="Change product picture"
-                              >
-                                <img
-                                  alt=""
-                                  className="h-full w-full object-contain"
-                                  src={getProductImage(product)}
-                                />
-                                <span className="absolute inset-x-0 bottom-0 inline-flex items-center justify-center gap-1 bg-[#08263d]/85 px-2 py-1 text-[10px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
-                                  <ImagePlus size={12} />
-                                  Change
-                                </span>
-                                <input
-                                  className="hidden"
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(event) =>
-                                    void replaceProductImage(product.id, event)
-                                  }
-                                  onClick={(event) => event.stopPropagation()}
-                                />
-                              </label>
-                              <div className="min-w-0 flex-1 space-y-3">
-                                <OfferTextAreaField
-                                  className="min-h-[72px] font-semibold"
-                                  hint="Main headline in the email preview"
-                                  label="Product title"
-                                  placeholder="Product title"
-                                  rows={2}
-                                  value={product.title}
-                                  onChange={(value) =>
-                                    updateProduct(product.id, { title: value })
-                                  }
-                                  onFocus={() => setSelectedId(product.id)}
-                                />
-                                <div className="grid gap-2 sm:grid-cols-2">
-                                  <OfferInputField
-                                    hint="Brand/tag shown in product table"
-                                    label="Brand"
-                                    placeholder="Brand"
-                                    value={product.brand}
-                                    onChange={(value) =>
-                                      updateProduct(product.id, { brand: value })
-                                    }
-                                    onFocus={() => setSelectedId(product.id)}
-                                  />
-                                  <OfferInputField
-                                    hint="Hero image source"
-                                    label="Image URL"
-                                    placeholder={
-                                      product.image.startsWith("data:")
-                                        ? "Uploaded image in use; paste image URL to replace"
-                                        : "Image URL"
-                                    }
-                                    value={getImageUrlInputValue(product)}
-                                    onChange={(value) =>
-                                      updateProduct(product.id, {
-                                        image: value.trim(),
-                                      })
-                                    }
-                                    onFocus={() => setSelectedId(product.id)}
-                                  />
-                                </div>
-                                <OfferTextAreaField
-                                  className="min-h-[92px]"
-                                  hint="Product overview in Product Detail"
-                                  label="Buyer-facing description"
-                                  placeholder="Product description"
-                                  rows={3}
-                                  value={product.summary}
-                                  onChange={(value) =>
-                                    updateProduct(product.id, { summary: value })
-                                  }
-                                  onFocus={() => setSelectedId(product.id)}
-                                />
-                              </div>
+                          </div>
+                          <label
+                            className="group relative grid h-[86px] w-[86px] cursor-pointer place-items-center overflow-hidden rounded-[7px] border border-[#dfe7ee] bg-white"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedId(product.id);
+                            }}
+                            title="Change product picture"
+                          >
+                            <img
+                              alt=""
+                              className="h-full w-full object-contain"
+                              src={getProductImage(product)}
+                            />
+                            <span className="absolute inset-x-0 bottom-0 inline-flex items-center justify-center gap-1 bg-[#08263d]/85 px-2 py-1 text-[10px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+                              <ImagePlus size={12} />
+                              Change
+                            </span>
+                            <input
+                              className="hidden"
+                              type="file"
+                              accept="image/*"
+                              onChange={(event) =>
+                                void replaceProductImage(product.id, event)
+                              }
+                              onClick={(event) => event.stopPropagation()}
+                            />
+                          </label>
+                          <div className="grid gap-2">
+                            <OfferTextAreaField
+                              className="min-h-[64px] resize-none font-semibold"
+                              label="Product Title"
+                              placeholder="Product title"
+                              rows={2}
+                              value={product.title}
+                              onChange={(value) =>
+                                updateProduct(product.id, { title: value })
+                              }
+                              onFocus={() => setSelectedId(product.id)}
+                            />
+                            <div className="grid grid-cols-2 gap-2">
+                              <OfferInputField
+                                label="Brand"
+                                placeholder="Brand"
+                                value={product.brand}
+                                onChange={(value) =>
+                                  updateProduct(product.id, { brand: value })
+                                }
+                                onFocus={() => setSelectedId(product.id)}
+                              />
+                              <OfferInputField
+                                label="Image URL"
+                                placeholder={
+                                  product.image.startsWith("data:")
+                                    ? "Uploaded image in use"
+                                    : "Image URL"
+                                }
+                                value={getImageUrlInputValue(product)}
+                                onChange={(value) =>
+                                  updateProduct(product.id, {
+                                    image: value.trim(),
+                                  })
+                                }
+                                onFocus={() => setSelectedId(product.id)}
+                              />
                             </div>
-                          </td>
-                          <td className="px-3 py-3 align-top">
-                            <div className="grid gap-3">
+                            <OfferTextAreaField
+                              className="min-h-[64px] resize-none"
+                              label="Buyer-Facing Description"
+                              placeholder="Product description"
+                              rows={2}
+                              value={product.summary}
+                              onChange={(value) =>
+                                updateProduct(product.id, { summary: value })
+                              }
+                              onFocus={() => setSelectedId(product.id)}
+                            />
+                          </div>
+                          <div className="grid h-full content-start gap-2 rounded-[8px] border border-[#e4ebf1] bg-[#f8fbfd] p-3">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
+                              Metadata
+                            </div>
+                            <div className="grid gap-2">
                               {identifierFieldConfigs.map((field) => (
                                 <OfferInputField
                                   key={field.key}
-                                  hint={field.hint}
                                   label={field.label}
                                   placeholder={field.placeholder}
                                   value={product[field.key]}
@@ -1482,46 +1471,62 @@ export default function Home() {
                                 />
                               ))}
                             </div>
-                          </td>
-                          <td className="px-3 py-3 align-top">
-                            <div className="grid grid-cols-3 gap-2">
-                              {commercialFieldConfigs.map((field) => (
-                                <OfferInputField
-                                  key={field.key}
-                                  hint={field.hint}
-                                  label={field.label}
-                                  placeholder={field.placeholder}
-                                  value={product[field.key]}
-                                  onChange={(value) =>
-                                    updateProduct(product.id, {
-                                      [field.key]: value,
-                                    } as Partial<ProductOffer>)
-                                  }
-                                  onFocus={() => setSelectedId(product.id)}
-                                />
-                              ))}
+                          </div>
+                          <div className="grid h-full content-start gap-3">
+                            <div className="rounded-[8px] border border-[#e4ebf1] bg-[#f8fbfd] p-3">
+                              <div className="mb-2 flex items-center justify-between gap-2">
+                                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
+                                  Commercial Terms
+                                </div>
+                                <div className="text-[10px] font-medium text-[#7b91a5]">
+                                  Price / Units / FOB
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                {commercialFieldConfigs.map((field) => (
+                                  <OfferInputField
+                                    key={field.key}
+                                    label={field.label}
+                                    placeholder={field.placeholder}
+                                    value={product[field.key]}
+                                    onChange={(value) =>
+                                      updateProduct(product.id, {
+                                        [field.key]: value,
+                                      } as Partial<ProductOffer>)
+                                    }
+                                    onFocus={() => setSelectedId(product.id)}
+                                  />
+                                ))}
+                              </div>
                             </div>
-                          </td>
-                          <td className="px-3 py-3 align-top">
-                            <div className="grid grid-cols-3 gap-2">
-                              {logisticsFieldConfigs.map((field) => (
-                                <OfferInputField
-                                  key={field.key}
-                                  hint={field.hint}
-                                  label={field.label}
-                                  placeholder={field.placeholder}
-                                  value={product[field.key]}
-                                  onChange={(value) =>
-                                    updateProduct(product.id, {
-                                      [field.key]: value,
-                                    } as Partial<ProductOffer>)
-                                  }
-                                  onFocus={() => setSelectedId(product.id)}
-                                />
-                              ))}
+                            <div className="rounded-[8px] border border-[#e4ebf1] bg-[#f8fbfd] p-3">
+                              <div className="mb-2 flex items-center justify-between gap-2">
+                                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#60788e]">
+                                  Logistics
+                                </div>
+                                <div className="text-[10px] font-medium text-[#7b91a5]">
+                                  Case / Pallet / Truckload
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                {logisticsFieldConfigs.map((field) => (
+                                  <OfferInputField
+                                    key={field.key}
+                                    label={field.label}
+                                    placeholder={field.placeholder}
+                                    value={product[field.key]}
+                                    onChange={(value) =>
+                                      updateProduct(product.id, {
+                                        [field.key]: value,
+                                      } as Partial<ProductOffer>)
+                                    }
+                                    onFocus={() => setSelectedId(product.id)}
+                                  />
+                                ))}
+                              </div>
                             </div>
-                          </td>
-                          <td className="px-3 py-3 align-top">
+                          </div>
+                          <div className="pt-7">
                             <span
                               className={`inline-flex rounded-[999px] px-2.5 py-1 text-xs font-semibold ${
                                 product.status === "Ready"
@@ -1535,11 +1540,11 @@ export default function Home() {
                             >
                               {product.status}
                             </span>
-                          </td>
-                        </tr>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
+                    </div>
+                  </div>
                 </div>
               </div>
 
